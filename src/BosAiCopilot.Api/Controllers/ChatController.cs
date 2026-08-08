@@ -1,8 +1,11 @@
 using System.Text;
+using System.Text.Json;
 using BosAiCopilot.Core.Models.Chat;
 using BosAiCopilot.Core.Services.Conversations;
+using BosAiCopilot.Plugins;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BosAiCopilot.Api.Controllers;
 
@@ -11,13 +14,14 @@ namespace BosAiCopilot.Api.Controllers;
 public sealed class ChatController(
     IChatClient chatClient,
     ConversationHistoryService conversationHistory,
-    ILogger<ChatController> logger) : ControllerBase
+    ILogger<ChatController> logger,
+    IServiceProvider serviceProvider) : ControllerBase
 {
     [HttpPost]
-    [ProducesResponseType<ChatResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status502BadGateway)]
-    public async Task<ActionResult<ChatResult>> SendMessageAsync(
+    public async Task<ActionResult> SendMessageAsync(
         ChatRequest request,
         CancellationToken cancellationToken)
     {
@@ -38,7 +42,7 @@ public sealed class ChatController(
         }
 
         var conversation = conversationHistory.GetOrCreate(
-    request.ConversationId);
+            request.ConversationId);
 
         await conversation.Gate.WaitAsync(cancellationToken);
 
@@ -49,9 +53,15 @@ public sealed class ChatController(
                     ChatRole.User,
                     request.Message));
 
+            var chatOptions = new ChatOptions
+            {
+                Tools = AiTools.Create(serviceProvider)
+            };
+
             var response = await chatClient.GetResponseAsync(
                 conversation.Messages,
-                cancellationToken: cancellationToken);
+                chatOptions,
+                cancellationToken);
 
             var responseText = response.Text ?? string.Empty;
 
@@ -74,7 +84,8 @@ public sealed class ChatController(
 
     [HttpDelete("{conversationId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public IActionResult ClearConversation(string conversationId)
+    public IActionResult ClearConversation(
+        string conversationId)
     {
         conversationHistory.Clear(conversationId);
 
@@ -82,16 +93,17 @@ public sealed class ChatController(
     }
 
     [HttpPost("stream")]
-    [Produces("text/plain")]
+    [Produces("text/event-stream")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task StreamMessageAsync(
-     ChatRequest request,
-     CancellationToken cancellationToken)
+        ChatRequest request,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.ConversationId))
         {
-            Response.StatusCode = StatusCodes.Status400BadRequest;
+            Response.StatusCode =
+                StatusCodes.Status400BadRequest;
 
             await Response.WriteAsJsonAsync(
                 new
@@ -105,7 +117,8 @@ public sealed class ChatController(
 
         if (string.IsNullOrWhiteSpace(request.Message))
         {
-            Response.StatusCode = StatusCodes.Status400BadRequest;
+            Response.StatusCode =
+                StatusCodes.Status400BadRequest;
 
             await Response.WriteAsJsonAsync(
                 new
@@ -125,47 +138,80 @@ public sealed class ChatController(
 
         try
         {
-            await conversation.Gate.WaitAsync(cancellationToken);
+            await conversation.Gate.WaitAsync(
+                cancellationToken);
+
             lockAcquired = true;
 
-            originalMessageCount = conversation.Messages.Count;
+            originalMessageCount =
+                conversation.Messages.Count;
 
             conversation.Messages.Add(
                 new ChatMessage(
                     ChatRole.User,
                     request.Message));
 
-            Response.StatusCode = StatusCodes.Status200OK;
-            Response.ContentType = "text/plain; charset=utf-8";
+            Response.StatusCode =
+                StatusCodes.Status200OK;
 
-            Response.Headers.CacheControl = "no-cache";
-            Response.Headers.Append("X-Accel-Buffering", "no");
+            Response.ContentType =
+                "text/event-stream; charset=utf-8";
 
-            var responseBuilder = new StringBuilder();
+            Response.Headers.CacheControl =
+                "no-cache";
 
-            await foreach (var update in chatClient.GetStreamingResponseAsync(
-                conversation.Messages,
-                cancellationToken: cancellationToken))
+            Response.Headers.Append(
+                "X-Accel-Buffering",
+                "no");
+
+            var chatOptions = new ChatOptions
+            {
+                Tools = AiTools.Create(serviceProvider)
+            };
+
+            var responseBuilder =
+                new StringBuilder();
+
+            await foreach (
+                var update
+                in chatClient.GetStreamingResponseAsync(
+                    conversation.Messages,
+                    chatOptions,
+                    cancellationToken))
             {
                 if (string.IsNullOrEmpty(update.Text))
                 {
                     continue;
                 }
 
-                responseBuilder.Append(update.Text);
+                responseBuilder.Append(
+                    update.Text);
 
-                await WriteChunkAsync
-                (
-                    update.Text,
+                await WriteSseEventAsync(
+                    "chunk",
+                    new
+                    {
+                        content = update.Text
+                    },
                     cancellationToken);
-                }
+            }
 
-            var completeResponse = responseBuilder.ToString();
+            var completeResponse =
+                responseBuilder.ToString();
 
             conversation.Messages.Add(
                 new ChatMessage(
                     ChatRole.Assistant,
                     completeResponse));
+
+            await WriteSseEventAsync(
+                "completed",
+                new
+                {
+                    conversationId =
+                        request.ConversationId
+                },
+                cancellationToken);
         }
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
@@ -191,15 +237,28 @@ public sealed class ChatController(
 
             if (!Response.HasStarted)
             {
-                Response.StatusCode = StatusCodes.Status502BadGateway;
+                Response.StatusCode =
+                    StatusCodes.Status502BadGateway;
 
                 await Response.WriteAsJsonAsync(
                     new
                     {
-                        error = "Não foi possível obter uma resposta do modelo."
+                        error =
+                            "Não foi possível obter uma resposta do modelo."
                     },
                     CancellationToken.None);
+
+                return;
             }
+
+            await WriteSseEventAsync(
+                "error",
+                new
+                {
+                    message =
+                        "O streaming foi interrompido por um erro."
+                },
+                CancellationToken.None);
         }
         finally
         {
@@ -210,17 +269,20 @@ public sealed class ChatController(
         }
     }
 
-    private async Task WriteChunkAsync(
-    string content,
-    CancellationToken cancellationToken)
+    private async Task WriteSseEventAsync<T>(
+        string eventName,
+        T data,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(content))
-        {
-            return;
-        }
+        var json =
+            JsonSerializer.Serialize(data);
 
         await Response.WriteAsync(
-            content,
+            $"event: {eventName}\n",
+            cancellationToken);
+
+        await Response.WriteAsync(
+            $"data: {json}\n\n",
             cancellationToken);
 
         await Response.Body.FlushAsync(
@@ -228,17 +290,19 @@ public sealed class ChatController(
     }
 
     private static void RollbackConversation(
-    ConversationState conversation,
-    int originalMessageCount)
+        ConversationState conversation,
+        int originalMessageCount)
     {
         if (originalMessageCount < 0 ||
-            conversation.Messages.Count <= originalMessageCount)
+            conversation.Messages.Count <=
+            originalMessageCount)
         {
             return;
         }
 
         conversation.Messages.RemoveRange(
             originalMessageCount,
-            conversation.Messages.Count - originalMessageCount);
+            conversation.Messages.Count -
+            originalMessageCount);
     }
 }

@@ -1,8 +1,10 @@
 using BosAiCopilot.Core.Options;
+using BosAiCopilot.Core.Services.Conversations;
+using BosAiCopilot.Plugins;
+using BosAiCopilot.Plugins.DateTimeTools;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using OpenAI;
-using BosAiCopilot.Core.Services.Conversations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,13 +30,19 @@ builder.Services.AddChatClient(serviceProvider =>
 
     return openAIClient
         .GetChatClient(options.ModelId)
-        .AsIChatClient();
-});
+        .AsIChatClient()
+        .AsBuilder()
+        .UseFunctionInvocation(
+            serviceProvider.GetRequiredService<ILoggerFactory>())
+        .Build();
+        });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 builder.Services.AddSingleton<ConversationHistoryService>();
+builder.Services.AddSingleton<DateTimePlugin>();
+builder.Services.AddSingleton<AiTools>();
 
 
 var app = builder.Build();
