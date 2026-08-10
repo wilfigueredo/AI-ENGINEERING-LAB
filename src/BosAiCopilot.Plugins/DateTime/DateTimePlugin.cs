@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using System.ComponentModel;
+using Microsoft.SemanticKernel;
 
 namespace BosAiCopilot.Plugins.DateTimeTools;
 

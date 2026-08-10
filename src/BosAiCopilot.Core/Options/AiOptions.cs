@@ -14,4 +14,5 @@ public sealed class AiOptions
 
     [Required]
     public string ApiKey { get; init; } = string.Empty;
+    public string EmbeddingModelId { get; set; } = string.Empty;
 }

@@ -4,10 +4,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BosAiCopilot.Plugins;
 
-public static class AiTools
+public sealed class AiTools(
+    IServiceProvider serviceProvider)
 {
-    public static IList<AITool> Create(
-        IServiceProvider serviceProvider)
+    public IList<AITool> Create()
     {
         var dateTimePlugin =
             serviceProvider.GetRequiredService<DateTimePlugin>();

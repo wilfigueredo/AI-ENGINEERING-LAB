@@ -1,11 +1,13 @@
 using System.Text;
 using System.Text.Json;
 using BosAiCopilot.Core.Models.Chat;
+using BosAiCopilot.Core.Models.Embedding;
 using BosAiCopilot.Core.Services.Conversations;
 using BosAiCopilot.Plugins;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.SemanticKernel;
+using BosAiCopilot.Core.AI;
 
 namespace BosAiCopilot.Api.Controllers;
 
@@ -13,9 +15,12 @@ namespace BosAiCopilot.Api.Controllers;
 [Route("api/[controller]")]
 public sealed class ChatController(
     IChatClient chatClient,
-    ConversationHistoryService conversationHistory,
+    ConversationHistoryService conversationHistory,    
     ILogger<ChatController> logger,
-    IServiceProvider serviceProvider) : ControllerBase
+    AiTools aiTools,
+    IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
+    Kernel kernel)
+    : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -55,7 +60,7 @@ public sealed class ChatController(
 
             var chatOptions = new ChatOptions
             {
-                Tools = AiTools.Create(serviceProvider)
+                Tools = aiTools.Create()
             };
 
             var response = await chatClient.GetResponseAsync(
@@ -166,8 +171,9 @@ public sealed class ChatController(
 
             var chatOptions = new ChatOptions
             {
-                Tools = AiTools.Create(serviceProvider)
+                Tools = aiTools.Create()
             };
+
 
             var responseBuilder =
                 new StringBuilder();
@@ -267,6 +273,183 @@ public sealed class ChatController(
                 conversation.Gate.Release();
             }
         }
+    }
+
+    [HttpGet("kernel")]
+    public IActionResult GetKernelInfo()
+    {
+
+        if (kernel is null)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    error = "Kernel não foi inicializado."
+                });
+        }
+
+        return Ok(new
+        {
+            kernelCreated = kernel is not null,
+            pluginCount = kernel!.Plugins.Count,
+            plugins = kernel!.Plugins.Select(plugin => new
+            {
+                plugin.Name,
+                functions = plugin.Select(function =>
+                    function.Name)
+            })
+        });
+    }
+
+    [HttpPost("kernel/count-words")]
+    public async Task<IActionResult> CountWordsWithKernelAsync(
+    [FromBody] string text,
+    CancellationToken cancellationToken)
+    {
+        var arguments = new KernelArguments
+        {
+            ["text"] = text
+        };
+
+        var result = await kernel.InvokeAsync(
+            pluginName: "Text",
+            functionName: "count_words",
+            arguments: arguments,
+            cancellationToken: cancellationToken);
+
+        return Ok(new
+        {
+            input = text,
+            wordCount = result.GetValue<int>()
+        });
+    }
+
+    [HttpPost("kernel/upper-case")]
+    public async Task<IActionResult> ToUpperCaseWithKernelAsync(
+    [FromBody] string text,
+    CancellationToken cancellationToken)
+    {
+        var arguments = new KernelArguments
+        {
+            ["text"] = text
+        };
+
+        var result = await kernel.InvokeAsync(
+            pluginName: "Text",
+            functionName: "to_upper_case",
+            arguments: arguments,
+            cancellationToken: cancellationToken);
+
+        return Ok(new
+        {
+            input = text,
+            result = result.GetValue<string>()
+        });
+    }
+
+    [HttpPost("kernel/chat")]
+    public async Task<IActionResult> ChatWithKernelAsync(
+    [FromBody] string message,
+    CancellationToken cancellationToken)
+    {
+        var settings = new PromptExecutionSettings
+        {
+            FunctionChoiceBehavior =
+                FunctionChoiceBehavior.Auto()
+        };
+
+        var result = await kernel.InvokePromptAsync(
+            message,
+            new KernelArguments(settings),
+            cancellationToken: cancellationToken);
+
+        return Ok(new
+        {
+            message,
+            response = result.ToString()
+        });
+    }
+
+    [HttpPost("embedding")]
+    public async Task<IActionResult> GenerateEmbeddingAsync(
+    [FromBody] string text,
+    CancellationToken cancellationToken)
+    {
+        var embedding =
+            await embeddingGenerator.GenerateAsync(
+                text,
+                cancellationToken: cancellationToken);
+
+        return Ok(new
+        {
+            text,
+            dimensions = embedding.Vector.Length,
+            preview = embedding.Vector
+                .Span[..Math.Min(10, embedding.Vector.Length)]
+                .ToArray()
+        });
+    }
+
+    [HttpPost("embedding/similarity")]
+    public async Task<IActionResult> CompareEmbeddingsAsync(
+    [FromBody] EmbeddingComparisonRequest request,
+    CancellationToken cancellationToken)
+    {
+        var firstEmbedding =
+            await embeddingGenerator.GenerateAsync(
+                request.FirstText,
+                cancellationToken: cancellationToken);
+
+        var secondEmbedding =
+            await embeddingGenerator.GenerateAsync(
+                request.SecondText,
+                cancellationToken: cancellationToken);
+
+        var similarity = VectorSimilarity.CosineSimilarity(
+            firstEmbedding.Vector.Span,
+            secondEmbedding.Vector.Span);
+
+        return Ok(new
+        {
+            request.FirstText,
+            request.SecondText,
+            similarity
+        });
+    }
+
+    private static double CosineSimilarity(
+    ReadOnlySpan<float> first,
+    ReadOnlySpan<float> second)
+    {
+        if (first.Length != second.Length)
+        {
+            throw new ArgumentException(
+                "Os vetores devem possuir a mesma dimensão.");
+        }
+
+        double dotProduct = 0;
+        double firstMagnitude = 0;
+        double secondMagnitude = 0;
+
+        for (var i = 0; i < first.Length; i++)
+        {
+            dotProduct += first[i] * second[i];
+
+            firstMagnitude += first[i] * first[i];
+
+            secondMagnitude += second[i] * second[i];
+        }
+
+        if (firstMagnitude == 0 ||
+            secondMagnitude == 0)
+        {
+            return 0;
+        }
+
+        return dotProduct /
+            (Math.Sqrt(firstMagnitude) *
+             Math.Sqrt(secondMagnitude));
     }
 
     private async Task WriteSseEventAsync<T>(
