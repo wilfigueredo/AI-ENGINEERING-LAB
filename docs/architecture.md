@@ -48,7 +48,6 @@ AI-ENGINEERING-LAB
 
 ## 3. Project Responsibilities
 
-3. Project Responsibilities
 ### AiEngineeringLab.Api
 
 The API project is the executable entry point of the laboratory.
@@ -202,6 +201,7 @@ from Microsoft.Extensions.AI.
 
 Conceptually:
 
+```text
 HTTP Request
      ↓
 ChatController
@@ -213,6 +213,7 @@ AI Provider
 LLM
      ↓
 Response
+```
 
 The application therefore interacts with an abstraction rather than coupling
 the controller directly to provider-specific chat APIs.
@@ -424,7 +425,6 @@ Vector comparison logic is located in Core rather than the controller.
 Current flow:
 
 ```text
-
 Text A                  Text B
   ↓                       ↓
 Embedding A            Embedding B
@@ -434,8 +434,7 @@ Embedding A            Embedding B
           VectorSimilarity
                 ↓
         Cosine Similarity
-		
-		```
+```
 
 This separation allows the mathematical behavior to be unit tested without
 making calls to an external AI provider.
@@ -464,6 +463,7 @@ avoid manual dependency creation in controllers;
 isolate implementations;
 support testability;
 centralize configuration.
+
 ## 14. Configuration and Secrets
 
 Application configuration is externalized through configuration files and
@@ -499,6 +499,7 @@ in the public API of a production application.
 
 This distinction is intentional:
 
+```text
 AI Engineering Lab
         ↓
 experimentation
@@ -510,6 +511,8 @@ Production Application
         ↓
 only capabilities justified
 by product requirements
+```
+
 ## 16. Current Architecture
 
 At the current stage, the main component relationship can be summarized as:
