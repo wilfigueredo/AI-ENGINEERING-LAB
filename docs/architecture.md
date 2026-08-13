@@ -30,7 +30,7 @@ without coupling all concepts directly to the API layer.
 
 ## 2. Solution Structure
 
-```text
+text
 AI-ENGINEERING-LAB
 │
 ├── src/
