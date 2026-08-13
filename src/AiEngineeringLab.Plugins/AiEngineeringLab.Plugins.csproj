@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\BosAiCopilot.Core\BosAiCopilot.Core.csproj" />
+    <ProjectReference Include="..\AiEngineeringLab.Core\AiEngineeringLab.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BosAiCopilot.Core\BosAiCopilot.Core.csproj" />
-    <ProjectReference Include="..\BosAiCopilot.Plugins\BosAiCopilot.Plugins.csproj" />
+    <ProjectReference Include="..\AiEngineeringLab.Core\AiEngineeringLab.Core.csproj" />
+	<ProjectReference Include="..\AiEngineeringLab.Plugins\AiEngineeringLab.Plugins.csproj" />
   </ItemGroup>
 
 </Project>
