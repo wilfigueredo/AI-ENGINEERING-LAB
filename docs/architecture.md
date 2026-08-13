@@ -30,7 +30,7 @@ without coupling all concepts directly to the API layer.
 
 ## 2. Solution Structure
 
-text
+```text
 AI-ENGINEERING-LAB
 │
 ├── src/
@@ -44,9 +44,12 @@ AI-ENGINEERING-LAB
 ├── docs/
 ├── prompts/
 └── AiEngineeringLab.sln
+```
+
+## 3. Project Responsibilities
 
 3. Project Responsibilities
-AiEngineeringLab.Api
+### AiEngineeringLab.Api
 
 The API project is the executable entry point of the laboratory.
 
@@ -68,7 +71,7 @@ experiment endpoints.
 The API layer coordinates the components but should avoid containing reusable
 domain or mathematical logic.
 
-AiEngineeringLab.Core
+### AiEngineeringLab.Core
 
 The Core project contains reusable application concepts that do not depend on
 HTTP concerns.
@@ -95,7 +98,7 @@ VectorSimilarity
 The Core project is intended to contain logic that can be tested independently
 from ASP.NET Core and external AI providers whenever possible.
 
-AiEngineeringLab.Plugins
+### AiEngineeringLab.Plugins
 
 The Plugins project contains deterministic capabilities exposed to AI systems.
 
@@ -138,7 +141,7 @@ Keeping both implementations in the laboratory is intentional.
 The goal is to demonstrate and compare different AI integration approaches
 rather than force every experiment through a single framework.
 
-AiEngineeringLab.UnitTests
+### AiEngineeringLab.UnitTests
 
 The test project validates deterministic components independently from the LLM
 whenever possible.
@@ -157,9 +160,10 @@ incompatible dimensions.
 
 External LLM behavior is not treated as deterministic unit-test logic.
 
-4. Dependency Direction
+## 4. Dependency Direction
 
 The current dependency direction is conceptually:
+```text
 
                  AiEngineeringLab.Api
                       │       │
@@ -170,18 +174,25 @@ The current dependency direction is conceptually:
                                       │
                                       ▼
                              AI framework abstractions
+							 
+							 
+```
 
 Tests consume the projects containing the behavior being validated:
+
+```text
 
 AiEngineeringLab.UnitTests
         │
         ├──► AiEngineeringLab.Core
         │
         └──► AiEngineeringLab.Plugins
+		
+```
 
 The Core project should remain independent from the API project.
 
-5. LLM Integration
+## 5. LLM Integration
 
 Chat communication is abstracted through:
 
@@ -206,12 +217,13 @@ Response
 The application therefore interacts with an abstraction rather than coupling
 the controller directly to provider-specific chat APIs.
 
-6. Conversation History
+## 6. Conversation History
 
 Conversation state is maintained independently for each conversation.
 
 Conceptually:
 
+```text
 conversationId
       ↓
 ConversationHistoryService
@@ -221,6 +233,8 @@ ConcurrentDictionary
 ConversationState
       ├── Messages
       └── SemaphoreSlim
+	  
+```
 
 Each conversation contains:
 
@@ -231,12 +245,13 @@ The per-conversation SemaphoreSlim prevents concurrent operations from
 modifying the same conversation state simultaneously while still allowing
 different conversations to execute independently.
 
-7. Streaming Architecture
+## 7. Streaming Architecture
 
 The laboratory exposes streamed responses using Server-Sent Events.
 
 Conceptually:
 
+```text
 Client
   │
   │ POST /stream
@@ -254,6 +269,8 @@ IChatClient.GetStreamingResponseAsync
   ▼
 Client
 
+```
+
 The streaming implementation currently includes:
 
 text/event-stream;
@@ -263,7 +280,7 @@ error events;
 response flushing;
 cancellation support;
 conversation rollback when generation is interrupted.
-8. Cancellation
+## 8. Cancellation
 
 ASP.NET Core provides a:
 
@@ -275,6 +292,7 @@ The token is propagated through asynchronous AI calls.
 
 Conceptually:
 
+```text
 Client disconnects or cancels
            ↓
 ASP.NET Core
@@ -284,15 +302,18 @@ CancellationToken
 AI operation
            ↓
 operation interruption
+```
 
 Streaming also restores the conversation to its previous state when an
 incomplete interaction must not become part of the history.
 
-9. Tool Calling with Microsoft.Extensions.AI
+## 9. Tool Calling with Microsoft.Extensions.AI
 
 Tools are exposed to the chat model through ChatOptions.
 
 Conceptually:
+
+```text
 
 Application
      ↓
@@ -307,11 +328,12 @@ C# Tool
 Tool result
      ↓
 LLM response
+```
 
 The LLM decides when an available tool is useful, while deterministic business
 logic remains implemented in C#.
 
-10. Semantic Kernel
+## 10. Semantic Kernel
 
 Semantic Kernel is included as a second orchestration approach.
 
@@ -319,16 +341,20 @@ The current Kernel contains registered native plugins.
 
 Conceptually:
 
+```text
 Kernel
   │
   └── Plugin: Text
           │
           ├── count_words
           └── to_upper_case
+```
 
 The laboratory currently demonstrates two invocation modes.
 
 Direct invocation
+
+```text
 Application
     ↓
 Kernel.InvokeAsync
@@ -336,10 +362,13 @@ Kernel.InvokeAsync
 Explicit plugin/function
     ↓
 KernelFunction
+```
 
 The application selects the function.
 
 Automatic function calling
+
+```text
 Prompt
    ↓
 Kernel.InvokePromptAsync
@@ -355,10 +384,11 @@ Function result
 LLM
    ↓
 Final response
+```
 
 In this mode, the LLM decides whether a registered function should be invoked.
 
-11. Embeddings
+## 11. Embeddings
 
 Embeddings are abstracted through:
 
@@ -366,6 +396,7 @@ IEmbeddingGenerator<string, Embedding<float>>
 
 Conceptually:
 
+```text
 Text
   ↓
 IEmbeddingGenerator
@@ -376,6 +407,8 @@ Embedding<float>
   ↓
 Vector<float>
 
+```
+
 The current embedding experiment exposes:
 
 the original text;
@@ -384,11 +417,13 @@ a preview of vector values.
 
 The embedding model and chat model are treated as separate AI capabilities.
 
-12. Vector Similarity
+## 12. Vector Similarity
 
 Vector comparison logic is located in Core rather than the controller.
 
 Current flow:
+
+```text
 
 Text A                  Text B
   ↓                       ↓
@@ -399,6 +434,8 @@ Embedding A            Embedding B
           VectorSimilarity
                 ↓
         Cosine Similarity
+		
+		```
 
 This separation allows the mathematical behavior to be unit tested without
 making calls to an external AI provider.
@@ -406,7 +443,7 @@ making calls to an external AI provider.
 Euclidean distance will be added as another vector metric during the remaining
 embedding experiments.
 
-13. Dependency Injection
+## 13. Dependency Injection
 
 AI services and application components are registered through the standard
 ASP.NET Core dependency injection container.
@@ -427,7 +464,7 @@ avoid manual dependency creation in controllers;
 isolate implementations;
 support testability;
 centralize configuration.
-14. Configuration and Secrets
+## 14. Configuration and Secrets
 
 Application configuration is externalized through configuration files and
 options.
@@ -445,7 +482,7 @@ repository.
 Development secrets are expected to be stored outside version-controlled
 configuration.
 
-15. Current Architectural Boundary
+## 15. Current Architectural Boundary
 
 The laboratory is an experimental environment.
 
@@ -473,9 +510,11 @@ Production Application
         ↓
 only capabilities justified
 by product requirements
-16. Current Architecture
+## 16. Current Architecture
 
 At the current stage, the main component relationship can be summarized as:
+
+```text
 
                          Client
                            │
@@ -522,7 +561,10 @@ At the current stage, the main component relationship can be summarized as:
                            │
                            ▼
                     VectorSimilarity
-17. Evolution Rule
+					
+```
+
+## 17. Evolution Rule
 
 New technologies should not be added merely to increase the number of
 frameworks used by the repository.
