@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.ComponentModel;
 using Microsoft.SemanticKernel;
 
-namespace BosAiCopilot.Plugins.DateTimeTools;
+namespace AiEngineeringLab.Plugins.DateTimeTools;
 
 public sealed class DateTimePlugin(
     ILogger<DateTimePlugin> logger)

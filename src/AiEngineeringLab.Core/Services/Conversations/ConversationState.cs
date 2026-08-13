@@ -1,6 +1,6 @@
 using Microsoft.Extensions.AI;
 
-namespace BosAiCopilot.Core.Services.Conversations;
+namespace AiEngineeringLab.Core.Services.Conversations;
 
 public sealed class ConversationState
 {

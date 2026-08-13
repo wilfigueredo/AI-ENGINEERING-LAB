@@ -1,6 +1,6 @@
-using BosAiCopilot.Core.AI;
+using AiEngineeringLab.Core.AI;
 
-namespace BosAiCopilot.UnitTests.AI;
+namespace AiEngineeringLab.UnitTests.AI;
 
 public sealed class VectorSimilarityTests
 {

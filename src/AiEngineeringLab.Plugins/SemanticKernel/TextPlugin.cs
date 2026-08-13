@@ -2,7 +2,7 @@ using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 
-namespace BosAiCopilot.Plugins.SemanticKernel;
+namespace AiEngineeringLab.Plugins.SemanticKernel;
 
 public sealed class TextPlugin(
     ILogger<TextPlugin> logger)

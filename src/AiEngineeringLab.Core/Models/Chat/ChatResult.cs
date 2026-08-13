@@ -1,4 +1,4 @@
-namespace BosAiCopilot.Core.Models.Chat;
+namespace AiEngineeringLab.Core.Models.Chat;
 
 public sealed class ChatResult
 {

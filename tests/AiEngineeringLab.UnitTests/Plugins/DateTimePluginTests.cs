@@ -1,7 +1,7 @@
-using BosAiCopilot.Plugins.DateTimeTools;
+using AiEngineeringLab.Plugins.DateTimeTools;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace BosAiCopilot.UnitTests.Plugins;
+namespace AiEngineeringLab.UnitTests.Plugins;
 
 public sealed class DateTimePluginTests
 {

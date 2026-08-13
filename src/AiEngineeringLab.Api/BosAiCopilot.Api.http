@@ -1,6 +1,6 @@
-@BosAiCopilot.Api_HostAddress = http://localhost:5276
+@AiEngineeringLab.Api_HostAddress = http://localhost:5276
 
-GET {{BosAiCopilot.Api_HostAddress}}/weatherforecast/
+GET {{AiEngineeringLab.Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###

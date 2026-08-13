@@ -1,4 +1,4 @@
-namespace BosAiCopilot.Core.AI;
+namespace AiEngineeringLab.Core.AI;
 
 public static class VectorSimilarity
 {

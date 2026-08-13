@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace BosAiCopilot.Core.Services.Conversations;
+namespace AiEngineeringLab.Core.Services.Conversations;
 
 public sealed class ConversationHistoryService
 {

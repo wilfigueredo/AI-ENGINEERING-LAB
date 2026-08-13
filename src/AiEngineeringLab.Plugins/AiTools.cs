@@ -1,8 +1,8 @@
-using BosAiCopilot.Plugins.DateTimeTools;
+using AiEngineeringLab.Plugins.DateTimeTools;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BosAiCopilot.Plugins;
+namespace AiEngineeringLab.Plugins;
 
 public sealed class AiTools(
     IServiceProvider serviceProvider)

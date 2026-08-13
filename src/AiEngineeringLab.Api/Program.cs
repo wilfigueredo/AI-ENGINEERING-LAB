@@ -1,8 +1,8 @@
-using BosAiCopilot.Core.Options;
-using BosAiCopilot.Core.Services.Conversations;
-using BosAiCopilot.Plugins;
-using BosAiCopilot.Plugins.DateTimeTools;
-using BosAiCopilot.Plugins.SemanticKernel;
+using AiEngineeringLab.Core.Options;
+using AiEngineeringLab.Core.Services.Conversations;
+using AiEngineeringLab.Plugins;
+using AiEngineeringLab.Plugins.DateTimeTools;
+using AiEngineeringLab.Plugins.SemanticKernel;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;

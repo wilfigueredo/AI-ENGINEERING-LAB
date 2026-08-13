@@ -1,15 +1,15 @@
 using System.Text;
 using System.Text.Json;
-using BosAiCopilot.Core.Models.Chat;
-using BosAiCopilot.Core.Models.Embedding;
-using BosAiCopilot.Core.Services.Conversations;
-using BosAiCopilot.Plugins;
+using AiEngineeringLab.Core.Models.Chat;
+using AiEngineeringLab.Core.Models.Embedding;
+using AiEngineeringLab.Core.Services.Conversations;
+using AiEngineeringLab.Plugins;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
-using BosAiCopilot.Core.AI;
+using AiEngineeringLab.Core.AI;
 
-namespace BosAiCopilot.Api.Controllers;
+namespace AiEngineeringLab.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

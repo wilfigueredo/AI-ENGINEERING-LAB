@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BosAiCopilot.Core.Options;
+namespace AiEngineeringLab.Core.Options;
 
 public sealed class AiOptions
 {

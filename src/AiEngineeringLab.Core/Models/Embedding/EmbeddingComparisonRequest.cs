@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BosAiCopilot.Core.Models.Embedding;
+namespace AiEngineeringLab.Core.Models.Embedding;
 public sealed class EmbeddingComparisonRequest
 {
     public string FirstText { get; set; } = string.Empty;
