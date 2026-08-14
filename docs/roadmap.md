@@ -33,11 +33,12 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 
 # Fase 1 — Fundamentos + Desenvolvimento com LLMs
 
-**Status:** ✅ Concluída
+**Status:** ✅ Concluída  
+**Duração estimada:** 2–3 semanas
 
 **Objetivo:** entender os conceitos centrais de aplicações com LLMs e construir uma aplicação .NET funcional.
 
-## 1.1 LLMs, Tokens e Context Window
+## 1.1 LLMs, conceitos e funcionamento
 
 ✅ Concluído
 
@@ -47,16 +48,7 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - limites e capacidades;
 - custos.
 
-## 1.2 Prompts e Parâmetros
-
-✅ Concluído
-
-- System, User e Assistant;
-- Prompt Engineering;
-- Temperature;
-- Top-p.
-
-## 1.3 APIs da OpenAI e integração .NET
+## 1.2 APIs da OpenAI
 
 ✅ Concluído
 
@@ -68,7 +60,26 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - chamadas assíncronas;
 - gerenciamento seguro de API Key.
 
-## 1.4 Embeddings — Fundamentos
+## 1.3 Prompt Engineering
+
+✅ Concluído
+
+- System, User e Assistant;
+- padrões de prompt;
+- Temperature;
+- Top-p;
+- determinismo x criatividade.
+
+## 1.4 Tokens e Custos
+
+✅ Concluído conceitualmente
+
+- consumo de tokens;
+- contexto;
+- estimativas de custo;
+- trade-offs de modelo e uso.
+
+## 1.5 Embeddings — Fundamentos
 
 ✅ Concluído conceitualmente e iniciado na prática
 
@@ -77,7 +88,7 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - representação vetorial;
 - interpretação semântica.
 
-## 1.5 Function Calling e Tools
+## 1.6 Function Calling e Tools
 
 ✅ Concluído
 
@@ -90,7 +101,7 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - integração com chat e streaming;
 - decisão entre código C# e LLM.
 
-## 1.6 Structured Outputs / JSON Mode
+## 1.7 Structured Outputs / JSON Mode
 
 ✅ Conceitos estudados; aprofundamento production-ready previsto na Fase 3
 
@@ -98,19 +109,6 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - schemas;
 - saídas estruturadas;
 - validação.
-
-## 1.7 Streaming e Histórico
-
-✅ Concluído
-
-- streaming de respostas;
-- Server-Sent Events (SSE);
-- eventos de chunk, completed e error;
-- `CancellationToken`;
-- histórico por `conversationId`;
-- estado de conversa;
-- controle de concorrência;
-- rollback em falha/cancelamento.
 
 ## 1.8 Semantic Kernel
 
@@ -135,13 +133,21 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - resources;
 - integração e papel do MCP na interoperabilidade de aplicações de IA.
 
-**Entrega:** aplicação/assistente funcional em .NET consumindo LLM via API, com contexto, streaming e execução de ferramentas.
+### Entregas da Fase 1
+
+- ✅ aplicação console/API .NET consumindo LLM;
+- ✅ uso de prompts e parâmetros;
+- ✅ saída estruturada em JSON em nível conceitual;
+- ✅ chamada de função simples;
+- ✅ histórico e streaming;
+- ✅ Semantic Kernel integrado.
 
 ---
 
 # Fase 2 — RAG Profissional
 
-**Status:** 🟡 Em andamento
+**Status:** 🟡 Em andamento  
+**Duração estimada:** 3–4 semanas
 
 **Objetivo:** dominar recuperação de informação, vetores, RAG e avaliação de qualidade.
 
@@ -320,7 +326,7 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - answer relevance;
 - precisão factual quando mensurável;
 - detecção de informação não suportada;
-- **LLM-as-a-Judge**.
+- LLM-as-a-Judge.
 
 ### Harness de testes
 
@@ -349,25 +355,31 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - configuração e segurança;
 - testes de qualidade e regressão.
 
-**Entrega da Fase 2:** Assistente Corporativo RAG em .NET com testes de qualidade e pipeline production-ready.
+### Entregas da Fase 2
+
+- ⬜ pipeline completo de RAG;
+- ⬜ comparação de estratégias de chunking e busca;
+- ⬜ suíte de testes (AI Harness);
+- ⬜ melhoria mensurável da qualidade das respostas;
+- ⬜ pipeline production-ready em .NET.
 
 ---
 
 # Fase 3 — Agentic AI
 
-**Status:** ⬜ Pendente
+**Status:** ⬜ Pendente  
+**Duração estimada:** 4–5 semanas
 
 **Objetivo:** construir agentes confiáveis com ferramentas, memória, planejamento, orquestração, observabilidade e segurança.
 
-## 3.1 Fundamentos de AI Agents
+## 3.1 Agente Autônomo
 
-- LLM x chatbot x workflow x agente;
 - agent loop: observar → decidir → agir → avaliar;
-- objetivos, estado e contexto;
-- autonomia e limites;
-- determinismo x comportamento probabilístico.
+- objetivos e autonomia controlada;
+- critérios de parada;
+- limites de execução.
 
-## 3.2 Tools e Function Calling para Agents
+## 3.2 Tools e Function Calling
 
 🟡 Base já construída na Fase 1; aprofundamento pendente
 
@@ -381,31 +393,26 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - composição de tools em tarefas multi-step;
 - quando executar C# versus usar o LLM.
 
-## 3.3 Estado, Memória e Planejamento
+## 3.3 Memória e Estado
 
 - estado do agente;
 - short-term memory;
 - long-term memory;
 - histórico x memória;
 - RAG como memória/conhecimento;
-- decomposição de objetivos;
-- observação e replanejamento;
 - persistência de estado.
 
-## 3.4 Agente Autônomo
+## 3.4 Planejamento e Replanejamento
 
-- loop de execução;
-- planejamento;
-- escolha e execução de tools;
+- decomposição de objetivos;
+- planejamento de tarefas;
 - observação de resultados;
+- replanejamento;
 - critérios de parada;
-- limite de iterações;
+- retry;
 - timeout;
-- erros;
 - custo/tokens;
-- human-in-the-loop;
-- prevenção de loops;
-- idempotência quando aplicável.
+- human-in-the-loop.
 
 ## 3.5 Multi-Agent Systems
 
@@ -432,7 +439,7 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - cancelamento;
 - propagação de erros.
 
-## 3.7 Reliability, Observability e Guardrails
+## 3.7 Observabilidade e Guardrails
 
 ### Observabilidade
 
@@ -482,13 +489,20 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - contenção/sandbox quando aplicável;
 - threat modeling para aplicações com IA.
 
-**Entrega da Fase 3:** Agent Automation System em .NET com múltiplos agentes, tools, memória, orquestração, observabilidade, guardrails e segurança.
+### Entregas da Fase 3
+
+- ⬜ agente funcional com tools e memória;
+- ⬜ sistema multiagente orquestrado;
+- ⬜ observabilidade completa;
+- ⬜ guardrails e segurança aplicados;
+- ⬜ projeto final: **Agent Automation System**.
 
 ---
 
 # Fase 4 — Expansão do AI Engineer
 
-**Status:** ⬜ Nova / futura
+**Status:** ⬜ Nova / futura  
+**Duração estimada:** 4–6 semanas
 
 **Objetivo:** ampliar a stack além de .NET com Python, frameworks do ecossistema de IA e sistemas multimodais.
 
@@ -520,7 +534,7 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - workflows de agentes baseados em grafo;
 - integração com aplicações reais.
 
-## 4.4 Multimodal AI
+## 4.4 Multimodal AI — Visão Geral
 
 - modelos de texto + imagem + áudio;
 - capacidades;
@@ -555,13 +569,19 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - observabilidade;
 - projeto demonstrável em portfólio.
 
-**Entrega da Fase 4:** projeto multimodal completo e capacidade prática de atuar também no ecossistema Python de AI Engineering.
+### Entregas da Fase 4
+
+- ⬜ aplicações Python de IA funcionais;
+- ⬜ pipeline multimodal com visão e/ou áudio;
+- ⬜ integração .NET + Python;
+- ⬜ projeto multimodal completo.
 
 ---
 
 # Fase 5 — Especializações Avançadas
 
-**Status:** ⬜ Opcional / futura
+**Status:** ⬜ Opcional / futura  
+**Duração estimada:** 3–4 semanas
 
 **Objetivo:** aprofundar áreas de alto valor conforme demanda de mercado, projetos e posicionamento profissional.
 
@@ -571,80 +591,68 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - graph retrieval;
 - relações;
 - consultas estruturadas;
-- Neo4j ou tecnologia equivalente quando houver justificativa prática.
+- Neo4j ou tecnologia equivalente em nível prático quando fizer sentido.
 
-## 5.2 Fine-tuning / LoRA e Personalização
+## 5.2 Fine-tuning e Personalização
 
 - quando usar fine-tuning versus RAG;
 - preparação de dados;
 - avaliação;
-- LoRA;
-- personalização;
-- combinação RAG + fine-tuning quando adequada.
+- LoRA em nível conceitual/prático quando aplicável;
+- combinação RAG + fine-tuning.
 
 ## 5.3 A2A e Protocolos de Integração
 
 - Agent-to-Agent;
-- protocolos A2A;
-- OpenAPI e contratos de integração;
-- interoperabilidade entre sistemas e agentes.
+- protocolos de interoperabilidade;
+- A2A;
+- OpenAPI;
+- integração entre sistemas e agentes.
 
-## 5.4 MLOps / LLMOps Avançado
+## 5.4 Deploy e MLOps/LLMOps de IA
 
 - Docker;
 - CI/CD;
 - versionamento de modelos e prompts;
 - monitoramento;
 - avaliação contínua;
-- deploy e operação de sistemas de IA.
+- rollout/fallback;
+- observabilidade em produção.
 
 ## 5.5 Ética, Compliance e Governança
 
 - privacidade;
 - vieses;
 - explicabilidade;
-- governança;
+- conformidade;
 - LGPD;
 - GDPR;
-- AI Act e requisitos regulatórios aplicáveis.
+- AI Act;
+- governança de sistemas de IA.
 
-**Entrega da Fase 5:** especialização avançada escolhida conforme demanda de mercado/projetos, com documentação, avaliação e operação apropriadas.
+### Entregas da Fase 5
+
+- ⬜ projeto avançado de especialização;
+- ⬜ documentação técnica;
+- ⬜ avaliação e métricas;
+- ⬜ deploy e monitoramento.
 
 ---
 
-# Competências transversais
+# Onde estamos agora
 
-Ao longo de todas as fases, o laboratório deve desenvolver continuamente:
+A Fase 1 está concluída e a Fase 2 está em andamento.
 
-- C#/.NET aplicado a AI Engineering;
-- Python aplicado a AI Engineering a partir da Fase 4;
-- testes automatizados;
-- arquitetura e separação de responsabilidades;
-- segurança de secrets e credenciais;
-- observabilidade;
-- avaliação quantitativa;
-- controle de custos e tokens;
-- documentação técnica;
-- Git/GitHub;
-- leitura de documentação de SDKs e modelos;
-- comparação de tecnologias por trade-offs;
-- capacidade de transformar experimentos em sistemas production-ready.
+No momento, em **2.1 Retrieval Fundamentals**:
 
-# Posição atual
-
-**Fase 1 concluída. Fase 2 em andamento.**
-
-Dentro de **2.1 Retrieval Fundamentals**:
-
-- ✅ Arquitetura RAG;
-- ✅ Embeddings para Retrieval;
-- ✅ Cosine Similarity;
-- ✅ Dot Product;
-- ✅ Euclidean Distance;
-- ✅ experimento comparativo entre as métricas;
-- 🟡 **próximo: Top-K Retrieval**;
-- ⬜ Recall e Precision;
-- ⬜ pipeline básico de recuperação.
+- ✅ arquitetura RAG estudada;
+- ✅ embeddings gerados na prática;
+- ✅ Cosine Similarity implementada;
+- ✅ Dot Product implementado;
+- ✅ Euclidean Distance implementada;
+- ✅ comparação das três métricas;
+- ✅ testes automatizados das métricas;
+- ⬜ **próximo passo: Top-K Retrieval**.
 
 A evolução seguinte será:
 
