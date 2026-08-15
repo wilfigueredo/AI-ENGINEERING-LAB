@@ -33,4 +33,42 @@ public static class VectorSimilarity
             (Math.Sqrt(firstMagnitude) *
              Math.Sqrt(secondMagnitude));
     }
+
+    public static float DotProduct(
+    ReadOnlySpan<float> vectorA,
+    ReadOnlySpan<float> vectorB)
+    {
+        if (vectorA.Length != vectorB.Length)
+            throw new ArgumentException(
+                "Vectors must have the same dimensions.");
+
+        float dotProduct = 0;
+
+        for (int i = 0; i < vectorA.Length; i++)
+        {
+            dotProduct += vectorA[i] * vectorB[i];
+        }
+
+        return dotProduct;
+    }
+
+    public static float EuclideanDistance(
+    ReadOnlySpan<float> vectorA,
+    ReadOnlySpan<float> vectorB)
+    {
+        if (vectorA.Length != vectorB.Length)
+            throw new ArgumentException(
+                "Vectors must have the same dimensions.");
+
+        float sum = 0;
+
+        for (int i = 0; i < vectorA.Length; i++)
+        {
+            float difference = vectorA[i] - vectorB[i];
+
+            sum += difference * difference;
+        }
+
+        return MathF.Sqrt(sum);
+    }
 }
