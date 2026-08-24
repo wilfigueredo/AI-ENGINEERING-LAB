@@ -1,6 +1,6 @@
 # AI Engineering Lab — Roadmap
 
-Roadmap prático para evolução de **AI Engineering com .NET como stack principal**, avançando de fundamentos de LLMs para **RAG profissional, Agentic AI, arquitetura de sistemas de IA em produção, Python/Multimodal e um Capstone integrador**.
+Roadmap prático para evolução de **AI Engineering com .NET como stack principal**, avançando de fundamentos de LLMs e Transformers para **RAG profissional, Agentic AI, arquitetura de sistemas de IA em produção, Python/Multimodal e um Capstone integrador**.
 
 > **Objetivo final:** formar um AI Engineer capaz de construir sistemas de IA robustos, avaliáveis, escaláveis e seguros usando .NET como stack principal, com RAG, agentes, MCP, segurança, arquitetura production-ready, expansão prática para Python e IA multimodal e um projeto integrador final.
 
@@ -23,7 +23,7 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 
 ## Status geral
 
-- ✅ **Fase 1 — Fundamentos + Desenvolvimento com LLMs:** concluída
+- ✅ **Fase 1 — Fundamentos + Desenvolvimento com LLMs:** concluída e auditada
 - 🟡 **Fase 2 — RAG Profissional:** em andamento
 - ⬜ **Fase 3 — Agentic AI:** pendente
 - ⬜ **Fase 4 — Expansão do AI Engineer:** futura
@@ -34,12 +34,12 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 
 # Fase 1 — Fundamentos + Desenvolvimento com LLMs
 
-**Status:** ✅ Concluída  
+**Status:** ✅ Concluída e auditada  
 **Duração estimada:** 2–3 semanas
 
-**Objetivo:** entender os conceitos centrais de aplicações com LLMs e construir uma aplicação .NET funcional.
+**Objetivo:** entender os conceitos centrais de aplicações com LLMs e Transformers e construir uma aplicação .NET funcional com experimentos observáveis.
 
-## 1.1 LLMs, Tokens e Context Window
+## 1.1 LLMs, Tokens, Context Window e Custos
 
 ✅ Concluído
 
@@ -47,17 +47,23 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - tokens;
 - context window;
 - limites e capacidades;
-- contexto e custos.
+- contexto e custos;
+- medição prática de `InputTokenCount`, `OutputTokenCount` e `TotalTokenCount`;
+- cálculo do impacto de tokens de entrada e saída no custo de uma chamada real.
 
-## 1.2 Prompts e Parâmetros
+## 1.2 Prompts, Papéis e Parâmetros de Geração
 
-✅ Concluído
+✅ Concluído conceitualmente e na prática
 
-- System, User e Assistant;
+- papéis `System`, `User` e `Assistant`;
+- influência prática da mensagem `System` no comportamento do modelo;
 - Prompt Engineering;
+- comparação entre prompt simples e prompt estruturado;
+- contexto, objetivo, público, restrições e formato;
 - Temperature;
 - Top-p;
-- determinismo x criatividade.
+- experimentos comparativos de previsibilidade x variedade;
+- determinismo relativo x criatividade.
 
 ## 1.3 APIs da OpenAI e integração .NET
 
@@ -71,38 +77,22 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - chamadas assíncronas;
 - gerenciamento seguro de API Key.
 
-## 1.4 Embeddings — Fundamentos
+## 1.4 Structured Outputs / JSON Mode
 
-✅ Concluído conceitualmente e iniciado na prática
+✅ Concluído conceitualmente e na prática
 
-- conceito de embeddings;
-- geração;
-- representação vetorial;
-- interpretação semântica.
+- solicitação de JSON via prompt;
+- diferença entre JSON solicitado por prompt e Structured Output;
+- `ChatOptions.ResponseFormat`;
+- `ChatResponseFormat.ForJsonSchema<T>()`;
+- geração de schema a partir de tipos C#;
+- DTO tipado;
+- enums para restringir valores permitidos;
+- desserialização com `System.Text.Json`;
+- validação e tratamento de saída inválida;
+- distinção entre garantia estrutural e correção semântica.
 
-## 1.5 Function Calling e Tools
-
-✅ Concluído
-
-- Function Calling;
-- tools nativas em C#;
-- parâmetros e retorno;
-- `AIFunctionFactory`;
-- execução automática;
-- funções determinísticas;
-- integração com chat e streaming;
-- decisão entre código C# e LLM.
-
-## 1.6 Structured Outputs / JSON Mode
-
-✅ Conceitos estudados; aprofundamento production-ready previsto na Fase 3
-
-- JSON;
-- schemas;
-- saídas estruturadas;
-- validação.
-
-## 1.7 Streaming e Histórico
+## 1.5 Streaming e Histórico
 
 ✅ Concluído
 
@@ -115,7 +105,71 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - controle de concorrência;
 - rollback em falha/cancelamento.
 
-## 1.8 Semantic Kernel
+## 1.6 Embeddings — Fundamentos
+
+✅ Concluído conceitualmente e na prática
+
+- conceito de embeddings;
+- geração;
+- representação vetorial;
+- dimensionalidade;
+- inspeção de vetores;
+- interpretação semântica;
+- relação entre embeddings, similaridade semântica e retrieval.
+
+## 1.7 Transformers — Fundamentos
+
+✅ Concluído conceitualmente e na prática
+
+### Conceitos estudados
+
+- redes neurais em nível necessário para AI Engineering;
+- Attention e Self-Attention;
+- Query, Key e Value (`Q`, `K`, `V`);
+- Multi-Head Attention;
+- arquitetura Transformer;
+- Transformer Blocks;
+- Feed Forward Network;
+- residual connections e normalization em nível conceitual;
+- Encoder x Decoder;
+- Encoder-only, Decoder-only e Encoder-Decoder;
+- BERT x GPT x Transformer original/T5;
+- Causal/Masked Self-Attention;
+- Positional Encoding;
+- tokenização, token IDs e subwords;
+- relação entre Transformers, embeddings e LLMs modernos.
+
+### Laboratório prático
+
+- projeto `AiEngineeringLab.Transformers`;
+- `Microsoft.ML.Tokenizers`;
+- comparação prática de tokenização em inglês, português e palavras incomuns;
+- BERT WordPiece tokenizer;
+- tokens especiais `[CLS]` e `[SEP]`;
+- modelo BERT Tiny em ONNX;
+- `Microsoft.ML.OnnxRuntime`;
+- preparação de `input_ids` e `attention_mask`;
+- inspeção do contrato de entrada/saída do modelo ONNX;
+- execução local do Transformer em .NET;
+- logits;
+- Softmax;
+- classificação de toxicidade (`not-toxic` x `toxic`);
+- distinção entre Transformer base e classification head/fine-tuning.
+
+## 1.8 Function Calling e Tools
+
+✅ Concluído
+
+- Function Calling;
+- tools nativas em C#;
+- parâmetros e retorno;
+- `AIFunctionFactory`;
+- execução automática;
+- funções determinísticas;
+- integração com chat e streaming;
+- decisão entre código C# e LLM.
+
+## 1.9 Semantic Kernel
 
 ✅ Concluído
 
@@ -128,19 +182,23 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 - seleção e execução automática de funções;
 - integração com o pipeline .NET.
 
-## 1.9 MCP — Model Context Protocol
+## 1.10 MCP — Model Context Protocol
 
-✅ Fundamentos estudados
+✅ Concluído conceitualmente e na prática
 
 - conceitos;
 - hosts e clients;
 - tools;
 - resources;
-- integração e papel do MCP na interoperabilidade de aplicações de IA.
+- integração e papel do MCP na interoperabilidade de aplicações de IA;
+- projeto `AiEngineeringLab.McpServer`;
+- projeto `AiEngineeringLab.McpClient`;
+- comunicação client/server usando o pacote `ModelContextProtocol`;
+- descoberta e consumo de capacidades MCP no laboratório.
 
 ### Entrega da Fase 1
 
-Aplicação/assistente funcional em .NET consumindo LLM via API, com contexto, streaming, Structured Outputs em nível conceitual, Function Calling e Semantic Kernel.
+**Aplicação/assistente funcional em .NET** consumindo LLM via API, com contexto, histórico, streaming, medição de tokens, experimentos de Temperature/Top-p, Prompt Engineering, Structured Outputs tipados, Function Calling, Semantic Kernel, MCP e laboratório local de Transformer/BERT com ONNX.
 
 ---
 
@@ -153,7 +211,7 @@ Aplicação/assistente funcional em .NET consumindo LLM via API, com contexto, s
 
 ## 2.1 Retrieval Fundamentals
 
-🟡 Em andamento
+✅ Concluído
 
 ### 2.1.1 Arquitetura RAG
 
@@ -190,40 +248,45 @@ Aplicação/assistente funcional em .NET consumindo LLM via API, com contexto, s
 
 ### 2.1.4 Top-K Retrieval
 
-⬜ Próximo
+✅ Implementado
 
 - conceito de Top-K;
 - ranking por similaridade;
-- similarity threshold;
 - seleção dos K documentos/chunks mais relevantes;
+- implementação em `VectorRetriever.TopK`;
+- ordenação por Cosine Similarity;
 - distinção entre Top-K de geração e Top-K de retrieval.
+
+> Similarity threshold será aprofundado junto da evolução do pipeline de retrieval e avaliação.
 
 ### 2.1.5 Recall e Precision
 
-⬜ Pendente
+✅ Implementado
 
 - Precision;
 - Recall;
-- Precision@K;
-- Recall@K;
 - relevância x cobertura;
-- trade-offs de retrieval.
+- trade-offs de retrieval;
+- implementação em `RetrievalMetrics`;
+- base prática para evolução posterior para Precision@K e Recall@K no AI Harness.
 
 ### 2.1.6 Pipeline básico de recuperação
 
-⬜ Pendente
+✅ Implementado em memória
 
 - query → embedding;
 - comparação/ranking;
 - Top-K;
 - retorno dos documentos/chunks relevantes;
-- testes do retriever.
+- retrieval semântico;
+- métricas básicas de avaliação;
+- testes e experimentos observáveis.
 
 ---
 
 ## 2.2 Chunking e Indexação
 
-⬜ Pendente
+⬜ **Próximo passo**
 
 - Fixed Chunking;
 - Recursive Chunking;
@@ -728,7 +791,11 @@ Especialização escolhida conforme demanda de mercado, projetos e objetivos pro
 
 - .NET/C# avançado aplicado a AI Engineering;
 - LLMs e APIs;
+- tokens, context window e custos;
 - Prompt Engineering;
+- Temperature e Top-p;
+- Structured Outputs e contratos tipados;
+- fundamentos de Transformers;
 - embeddings e similaridade vetorial;
 - RAG profissional;
 - Vector Search e Vector Databases;
@@ -736,7 +803,6 @@ Especialização escolhida conforme demanda de mercado, projetos e objetivos pro
 - agentes autônomos e multiagentes;
 - orquestração;
 - MCP;
-- Structured Outputs;
 - observabilidade;
 - segurança e guardrails;
 - arquitetura de sistemas de IA em produção;
@@ -753,17 +819,25 @@ Especialização escolhida conforme demanda de mercado, projetos e objetivos pro
 
 Neste momento:
 
-- ✅ Fase 1 concluída;
-- 🟡 Fase 2 em andamento;
+- ✅ **Fase 1 concluída e auditada contra o plano de estudos**;
+- ✅ LLMs, tokens, context window e custos estudados e experimentados;
+- ✅ Temperature e Top-p testados na prática;
+- ✅ papéis System/User/Assistant validados;
+- ✅ Prompt Engineering comparado em experimento controlado;
+- ✅ JSON Mode / Structured Outputs implementados com schema e tipos fortes;
+- ✅ streaming e histórico implementados;
+- ✅ Function Calling e Semantic Kernel implementados;
+- ✅ MCP Client/Server implementado;
+- ✅ fundamentos de Transformers concluídos com laboratório BERT + ONNX;
+- 🟡 **Fase 2 em andamento**;
 - ✅ arquitetura RAG estudada;
 - ✅ embeddings gerados e inspecionados;
-- ✅ Cosine Similarity implementada;
-- ✅ Dot Product implementado;
-- ✅ Euclidean Distance implementada;
-- ✅ comparação prática das métricas concluída;
-- ✅ testes automatizados das métricas;
-- ⬜ próximo passo: **Top-K Retrieval**.
+- ✅ Cosine Similarity, Dot Product e Euclidean Distance implementados;
+- ✅ Top-K Retrieval implementado;
+- ✅ Precision e Recall implementados;
+- ✅ pipeline básico de retrieval semântico implementado em memória;
+- ⬜ próximo passo: **Chunking e Indexação — começando por Fixed Chunking**.
 
 A sequência imediata será:
 
-**Top-K → Recall/Precision → pipeline básico → Chunking/Indexação → Vector Database → Retrieval Avançado → AI Harness → RAG Production-Ready → Agentic AI → Arquitetura de IA em Produção → Python/Multimodal → Especializações → Capstone.**
+**Fixed Chunking → Recursive Chunking → Semantic Chunking → Sliding Window/Overlap → Metadata/Ingestão/Reindexação → Vector Database → Retrieval Avançado → AI Harness → RAG Production-Ready → Agentic AI → Arquitetura de IA em Produção → Python/Multimodal → Especializações → Capstone.**
