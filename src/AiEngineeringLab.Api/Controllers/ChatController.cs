@@ -1,5 +1,7 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using AiEngineeringLab.Core.AI;
 using AiEngineeringLab.Core.Models.Chat;
 using AiEngineeringLab.Core.Models.Embedding;
 using AiEngineeringLab.Core.Services.Conversations;
@@ -7,7 +9,6 @@ using AiEngineeringLab.Plugins;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
-using AiEngineeringLab.Core.AI;
 
 namespace AiEngineeringLab.Api.Controllers;
 
@@ -53,6 +54,19 @@ public sealed class ChatController(
 
         try
         {
+            if (conversation.Messages.Count == 0)
+            {
+                conversation.Messages.Add(
+                   new ChatMessage(
+    ChatRole.System,
+    """
+    Você é um assistente técnico especializado em .NET e AI Engineering.
+    Responda de forma objetiva, clara e tecnicamente correta.
+    Quando houver incerteza, explicite a limitação.
+    """));
+            }
+
+
             conversation.Messages.Add(
                 new ChatMessage(
                     ChatRole.User,
@@ -60,6 +74,8 @@ public sealed class ChatController(
 
             var chatOptions = new ChatOptions
             {
+                Temperature = 0.2f,
+                TopP = 0.95f,
                 Tools = aiTools.Create()
             };
 
@@ -68,6 +84,12 @@ public sealed class ChatController(
                 chatOptions,
                 cancellationToken);
 
+            var usage = response.Usage;
+
+            var inputTokens = usage?.InputTokenCount ?? 0;
+            var outputTokens = usage?.OutputTokenCount ?? 0;
+            var totalTokens = usage?.TotalTokenCount ?? 0;
+
             var responseText = response.Text ?? string.Empty;
 
             conversation.Messages.Add(
@@ -75,15 +97,96 @@ public sealed class ChatController(
                     ChatRole.Assistant,
                     responseText));
 
-            return Ok(new ChatResult
+            return Ok(new
             {
-                ConversationId = request.ConversationId,
-                Response = responseText
+                conversationId = request.ConversationId,
+                response = responseText,
+
+                usage = new
+                {
+                    inputTokens,
+                    outputTokens,
+                    totalTokens
+                }
             });
         }
         finally
         {
             conversation.Gate.Release();
+        }
+    }
+
+    [HttpPost("structured")]
+    public async Task<IActionResult> AnalyzeStructuredAsync(
+     [FromBody] string message,
+     CancellationToken cancellationToken)
+    {
+        var messages = new List<ChatMessage>
+    {
+        new(
+            ChatRole.System,
+            """
+            Você é um assistente técnico especializado em .NET e AI Engineering.
+            Responda de forma objetiva, clara e tecnicamente correta.
+            Quando houver incerteza, explicite a limitação.
+            """),
+
+        new(
+            ChatRole.User,
+            message)
+    };
+
+        var options = new ChatOptions
+        {
+            Temperature = 0.2f,
+
+            ResponseFormat =
+                ChatResponseFormat.ForJsonSchema<MessageAnalysis>()
+        };
+
+        var response = await chatClient.GetResponseAsync(
+            messages,
+            options,
+            cancellationToken);
+
+        var responseText = response.Text ?? string.Empty;
+
+        try
+        {
+            var serializerOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            serializerOptions.Converters.Add(
+                new JsonStringEnumConverter());
+
+            var analysis =
+            JsonSerializer.Deserialize<MessageAnalysis>(
+                responseText,
+                serializerOptions);
+
+            if (analysis is null)
+            {
+                return StatusCode(
+                    StatusCodes.Status502BadGateway,
+                    new
+                    {
+                        error = "O modelo retornou uma resposta inválida."
+                    });
+            }
+
+            return Ok(analysis);
+        }
+        catch (JsonException)
+        {
+            return StatusCode(
+                StatusCodes.Status502BadGateway,
+                new
+                {
+                    error = "A resposta não corresponde ao schema esperado.",
+                    raw = responseText
+                });
         }
     }
 
@@ -171,6 +274,8 @@ public sealed class ChatController(
 
             var chatOptions = new ChatOptions
             {
+                Temperature = 0.2f,
+                TopP = 0.95f,
                 Tools = aiTools.Create()
             };
 
