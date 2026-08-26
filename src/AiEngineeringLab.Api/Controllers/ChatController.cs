@@ -2,12 +2,18 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AiEngineeringLab.Core.AI;
+using AiEngineeringLab.Core.AI.Chunking;
+using AiEngineeringLab.Core.AI.VectorStore;
 using AiEngineeringLab.Core.Models.Chat;
+using AiEngineeringLab.Core.Models.Chunking;
 using AiEngineeringLab.Core.Models.Embedding;
+using AiEngineeringLab.Core.Models.Ingestion;
 using AiEngineeringLab.Core.Services.Conversations;
+using AiEngineeringLab.Core.Services.Ingestion;
 using AiEngineeringLab.Plugins;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.AI;
+using Microsoft.ML.Tokenizers;
 using Microsoft.SemanticKernel;
 
 namespace AiEngineeringLab.Api.Controllers;
@@ -20,9 +26,336 @@ public sealed class ChatController(
     ILogger<ChatController> logger,
     AiTools aiTools,
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
+    IngestionService ingestionService,
+    IVectorStore vectorStore,
     Kernel kernel)
     : ControllerBase
 {
+
+    [HttpPost("retrieval/search")]
+    public async Task<IActionResult> SearchAsync(
+    [FromBody] string query,
+    [FromQuery] int k = 3,
+    CancellationToken cancellationToken = default)
+    {
+        var queryEmbedding =
+            await embeddingGenerator.GenerateAsync(
+                query,
+                cancellationToken: cancellationToken);
+
+        var results =
+            await vectorStore.SearchAsync(
+                queryEmbedding.Vector,
+                k,
+                cancellationToken);
+
+        return Ok(new
+        {
+            query,
+            k,
+            results
+        });
+    }
+
+    [HttpGet("ingestion/chunks")]
+    public async Task<IActionResult> GetIndexedChunksAsync(
+    CancellationToken cancellationToken)
+    {
+        var chunks =
+            await vectorStore.GetAllAsync(
+                cancellationToken);
+
+        return Ok(new
+        {
+            count = chunks.Count,
+
+            chunks = chunks.Select(chunk => new
+            {
+                chunk.Id,
+                chunk.DocumentId,
+                chunk.ChunkIndex,
+                chunk.Title,
+                chunk.Source,
+                chunk.Version,
+                chunk.Text,
+                embeddingDimensions = chunk.Embedding.Length
+            })
+        });
+    }
+
+    [HttpPost("ingestion")]
+    public async Task<IActionResult> IngestDocumentAsync(
+    [FromBody] DocumentInput document,
+    [FromQuery] int chunkSize = 500,
+    [FromQuery] int overlap = 50,
+    CancellationToken cancellationToken = default)
+    {
+        var chunks =
+            await ingestionService.IngestAsync(
+                document,
+                chunkSize,
+                overlap,
+                cancellationToken);
+
+        return Ok(new
+        {
+            document.Id,
+            document.Title,
+            document.Version,
+            chunkCount = chunks.Count,
+
+            chunks = chunks.Select(chunk => new
+            {
+                chunk.Id,
+                chunk.DocumentId,
+                chunk.ChunkIndex,
+                chunk.Title,
+                chunk.Source,
+                chunk.Version,
+                chunk.Text,
+
+                embeddingDimensions =
+                    chunk.Embedding.Length,
+
+                embeddingPreview =
+                    chunk.Embedding
+                        .Take(5)
+                        .ToArray()
+            })
+        });
+    }
+
+    [HttpPost("chunk/fixed")]
+    public IActionResult FixedChunk(
+    [FromBody] string text,
+    [FromQuery] int chunkSize = 100,
+    [FromQuery] int overlap = 0)
+    {
+        var context = new ChunkingContext
+        {
+            DocumentId = "doc-mcp-001",
+            Title = "Introdução ao MCP",
+            Source = "manual-test",
+            Version = "1"
+        };
+
+        var chunks = FixedTextChunker.Chunk(
+            text,
+            chunkSize,
+            overlap,
+            context);
+
+        return Ok(new
+        {
+            originalLength = text.Length,
+            chunkSize,
+            overlap,
+            chunkCount = chunks.Count,
+            chunks
+        });
+    }
+
+    [HttpPost("chunk/compare")]
+    public IActionResult CompareChunking(
+    [FromBody] string text,
+    [FromQuery] int charChunkSize = 100,
+    [FromQuery] int tokenChunkSize = 20,
+    [FromQuery] int overlap = 5)
+    {
+        var context = new ChunkingContext
+        {
+            DocumentId = "doc-mcp-001",
+            Title = "Introdução ao MCP",
+            Source = "manual-test",
+            Version = "1"
+        };
+
+        var charChunks =
+            FixedTextChunker.Chunk(
+                text,
+                charChunkSize,
+                overlap: 0,
+                context);
+
+        var tokenizer =
+            TiktokenTokenizer.CreateForModel("gpt-4");
+
+        var tokenChunker =
+            new TokenTextChunker(tokenizer);
+
+        var tokenChunks =
+            tokenChunker.Chunk(
+                text,
+                tokenChunkSize,
+                overlap);
+
+        return Ok(new
+        {
+            characters = new
+            {
+                chunkSize = charChunkSize,
+                chunkCount = charChunks.Count,
+                chunks = charChunks
+            },
+
+            tokens = new
+            {
+                chunkSize = tokenChunkSize,
+                overlap,
+                chunkCount = tokenChunks.Count,
+                chunks = tokenChunks
+            }
+        });
+    }
+
+    [HttpPost("chunk/token")]
+    public IActionResult TokenChunk(
+    [FromBody] string text,
+    [FromQuery] int chunkSize = 50,
+    [FromQuery] int overlap = 10)
+    {
+        var tokenizer =
+            TiktokenTokenizer.CreateForModel("gpt-4");
+
+        var chunker =
+            new TokenTextChunker(tokenizer);
+
+        var chunks =
+            chunker.Chunk(
+                text,
+                chunkSize,
+                overlap);
+
+        return Ok(new
+        {
+            chunkSize,
+            overlap,
+            chunkCount = chunks.Count,
+            chunks
+        });
+    }
+
+    [HttpPost("chunk/recursive")]
+    public IActionResult RecursiveChunk(
+    [FromBody] string text,
+    [FromQuery] int chunkSize = 100)
+    {
+        var chunks =
+            RecursiveTextChunker.Chunk(
+                text,
+                chunkSize);
+
+        return Ok(new
+        {
+            originalLength = text.Length,
+            chunkSize,
+            chunkCount = chunks.Count,
+            chunks
+        });
+    }
+
+    [HttpPost("chunk/sliding-window")]
+    public IActionResult SlidingWindowChunk(
+    [FromBody] string text,
+    [FromQuery] int windowSize = 20,
+    [FromQuery] int step = 15)
+    {
+        var tokenizer =
+            TiktokenTokenizer.CreateForModel("gpt-4");
+
+        var chunker =
+            new SlidingWindowChunker(tokenizer);
+
+        var chunks =
+            chunker.Chunk(
+                text,
+                windowSize,
+                step);
+
+        return Ok(new
+        {
+            windowSize,
+            step,
+            overlap = windowSize - step,
+            chunkCount = chunks.Count,
+            chunks
+        });
+    }
+
+    [HttpPost("chunk/semantic")]
+    public async Task<IActionResult> SemanticChunk(
+    [FromBody] string text,
+    [FromQuery] double threshold = 0.75,
+    CancellationToken cancellationToken = default)
+    {
+        var chunker =
+            new SemanticTextChunker(
+                embeddingGenerator);
+
+        var chunks =
+            await chunker.ChunkAsync(
+                text,
+                threshold,
+                cancellationToken);
+
+        return Ok(new
+        {
+            threshold,
+            chunkCount = chunks.Count,
+            chunks
+        });
+    }
+
+    [HttpPost("chunk/semantic/debug")]
+    public async Task<IActionResult> SemanticChunkDebug(
+    [FromBody] string text,
+    [FromQuery] double threshold = 0.75,
+    CancellationToken cancellationToken = default)
+    {
+        var paragraphs = text.Split(
+            "\n\n",
+            StringSplitOptions.RemoveEmptyEntries |
+            StringSplitOptions.TrimEntries);
+
+        var embeddings = new List<Embedding<float>>();
+
+        foreach (var paragraph in paragraphs)
+        {
+            var embedding =
+                await embeddingGenerator.GenerateAsync(
+                    paragraph,
+                    cancellationToken: cancellationToken);
+
+            embeddings.Add(embedding);
+        }
+
+        var boundaries =
+            new List<object>();
+
+        for (var i = 1; i < paragraphs.Length; i++)
+        {
+            var similarity =
+                VectorSimilarity.CosineSimilarity(
+                    embeddings[i - 1].Vector.Span,
+                    embeddings[i].Vector.Span);
+
+            boundaries.Add(new
+            {
+                left = i - 1,
+                right = i,
+                similarity,
+                split = similarity < threshold
+            });
+        }
+
+        return Ok(new
+        {
+            threshold,
+            paragraphs,
+            boundaries
+        });
+    }
+
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

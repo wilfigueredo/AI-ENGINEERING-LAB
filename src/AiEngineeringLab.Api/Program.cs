@@ -1,5 +1,7 @@
+using AiEngineeringLab.Core.AI.VectorStore;
 using AiEngineeringLab.Core.Options;
 using AiEngineeringLab.Core.Services.Conversations;
+using AiEngineeringLab.Core.Services.Ingestion;
 using AiEngineeringLab.Plugins;
 using AiEngineeringLab.Plugins.DateTimeTools;
 using AiEngineeringLab.Plugins.SemanticKernel;
@@ -66,6 +68,9 @@ builder.Services.AddSingleton<ConversationHistoryService>();
 builder.Services.AddSingleton<DateTimePlugin>();
 builder.Services.AddSingleton<AiTools>();
 builder.Services.AddSingleton<TextPlugin>();
+builder.Services.AddScoped<IngestionService>();
+builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>();
+builder.Services.AddScoped<IngestionService>();
 
 builder.Services.AddTransient<Kernel>(serviceProvider =>
 {
