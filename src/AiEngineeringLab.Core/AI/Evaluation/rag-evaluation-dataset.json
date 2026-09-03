@@ -1,0 +1,27 @@
+[
+  {
+    "id": "bos-001",
+    "question": "What is the BOS Framework?",
+    "expectedAnswer": "The BOS Framework provides architectural structure and conventions for building BOS-based applications.",
+    "expectedDocumentIds": [
+      "bos-framework-core"
+    ],
+    "answerExpected": true
+  },
+  {
+    "id": "bos-002",
+    "question": "How does MCP integrate with BOS?",
+    "expectedAnswer": "MCP can be used to expose and consume tools and resources between AI applications and BOS components.",
+    "expectedDocumentIds": [
+      "mcp-integration"
+    ],
+    "answerExpected": true
+  },
+  {
+    "id": "bos-003",
+    "question": "What is the annual revenue of the BOS Framework?",
+    "expectedAnswer": null,
+    "expectedDocumentIds": [],
+    "answerExpected": false
+  }
+]
