@@ -1,7 +1,7 @@
 using AiEngineeringLab.Core.Models.Ingestion;
 using AiEngineeringLab.Core.Models.Retrieval;
 
-namespace AiEngineeringLab.Core.AI.VectorStore;
+namespace AiEngineeringLab.Core.AI.Interface;
 
 public interface IVectorStore
 {
@@ -19,5 +19,16 @@ public interface IVectorStore
 
     Task DeleteByDocumentIdAsync(
     string documentId,
+    CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<VectorSearchResult>> SearchAsync(
+    ReadOnlyMemory<float> queryVector,
+    int k,
+    VectorSearchFilter? filter = null,
+    CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<LexicalSearchResult>> LexicalSearchAsync(
+    string query,
+    int k,
     CancellationToken cancellationToken = default);
 }

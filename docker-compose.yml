@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ai-engineering-postgres
+    environment:
+      POSTGRES_DB: ai_engineering
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ai-engineering-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  ai-engineering-postgres-data:

@@ -1,3 +1,5 @@
+using AiEngineeringLab.Core.AI.Interface;
+using AiEngineeringLab.Core.AI.Retrieval;
 using AiEngineeringLab.Core.AI.VectorStore;
 using AiEngineeringLab.Core.Options;
 using AiEngineeringLab.Core.Services.Conversations;
@@ -8,6 +10,7 @@ using AiEngineeringLab.Plugins.SemanticKernel;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using Npgsql;
 using OpenAI;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -61,6 +64,21 @@ builder.Services.AddSingleton<
             .AsIEmbeddingGenerator();
     });
 
+var connectionString =
+    builder.Configuration.GetConnectionString("Postgres")
+    ?? throw new InvalidOperationException(
+        "Postgres connection string not configured.");
+
+var dataSourceBuilder =
+    new NpgsqlDataSourceBuilder(connectionString);
+
+dataSourceBuilder.UseVector();
+
+var dataSource =
+    dataSourceBuilder.Build();
+
+builder.Services.AddSingleton(dataSource);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
@@ -69,8 +87,12 @@ builder.Services.AddSingleton<DateTimePlugin>();
 builder.Services.AddSingleton<AiTools>();
 builder.Services.AddSingleton<TextPlugin>();
 builder.Services.AddScoped<IngestionService>();
-builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>();
+builder.Services.AddSingleton<IVectorStore, PgVectorStore>();
 builder.Services.AddScoped<IngestionService>();
+builder.Services.AddScoped<QueryExpansionService>();
+builder.Services.AddScoped<QueryRewriteService>();
+builder.Services.AddScoped<RerankingService>();
+builder.Services.AddScoped<ContextCompressionService>();
 
 builder.Services.AddTransient<Kernel>(serviceProvider =>
 {

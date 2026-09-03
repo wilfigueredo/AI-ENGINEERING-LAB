@@ -3,11 +3,13 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using AiEngineeringLab.Core.AI;
 using AiEngineeringLab.Core.AI.Chunking;
-using AiEngineeringLab.Core.AI.VectorStore;
+using AiEngineeringLab.Core.AI.Interface;
+using AiEngineeringLab.Core.AI.Retrieval;
 using AiEngineeringLab.Core.Models.Chat;
 using AiEngineeringLab.Core.Models.Chunking;
 using AiEngineeringLab.Core.Models.Embedding;
 using AiEngineeringLab.Core.Models.Ingestion;
+using AiEngineeringLab.Core.Models.Retrieval;
 using AiEngineeringLab.Core.Services.Conversations;
 using AiEngineeringLab.Core.Services.Ingestion;
 using AiEngineeringLab.Plugins;
@@ -22,18 +24,22 @@ namespace AiEngineeringLab.Api.Controllers;
 [Route("api/[controller]")]
 public sealed class ChatController(
     IChatClient chatClient,
-    ConversationHistoryService conversationHistory,    
+    ConversationHistoryService conversationHistory,
     ILogger<ChatController> logger,
     AiTools aiTools,
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
     IngestionService ingestionService,
     IVectorStore vectorStore,
+    QueryExpansionService queryExpansionService,
+    QueryRewriteService queryRewriteService,
+    RerankingService rerankingService,
+    ContextCompressionService contextCompressionService,
     Kernel kernel)
     : ControllerBase
 {
 
-    [HttpPost("retrieval/search")]
-    public async Task<IActionResult> SearchAsync(
+    [HttpPost("retrieval/context-compression")]
+    public async Task<IActionResult> CompressContextAsync(
     [FromBody] string query,
     [FromQuery] int k = 3,
     CancellationToken cancellationToken = default)
@@ -43,10 +49,362 @@ public sealed class ChatController(
                 query,
                 cancellationToken: cancellationToken);
 
+        var retrieved =
+            await vectorStore.SearchAsync(
+                queryEmbedding.Vector,
+                k,
+                cancellationToken: cancellationToken);
+
+        var compressed =
+            await contextCompressionService.CompressAsync(
+                query,
+                retrieved,
+                cancellationToken);
+
+        return Ok(new
+        {
+            query,
+            k,
+            retrieved,
+            compressed
+        });
+    }
+
+    [HttpPost("retrieval/mmr")]
+    public async Task<IActionResult> MmrSearchAsync(
+    [FromBody] string query,
+    [FromQuery] int candidates = 10,
+    [FromQuery] int k = 3,
+    [FromQuery] double lambda = 0.7,
+    CancellationToken cancellationToken = default)
+    {
+        var queryEmbedding =
+            await embeddingGenerator.GenerateAsync(
+                query,
+                cancellationToken: cancellationToken);
+
+        var allChunks =
+            await vectorStore.GetAllAsync(
+                cancellationToken);
+
+        var topCandidates = allChunks
+            .Select(chunk => new
+            {
+                Chunk = chunk,
+                Score = VectorSimilarity.CosineSimilarity(
+                    queryEmbedding.Vector.Span,
+                    chunk.Embedding)
+            })
+            .OrderByDescending(x => x.Score)
+            .Take(candidates)
+            .Select(x => x.Chunk)
+            .ToList();
+
+        var mmrResults =
+            MmrRetriever.Select(
+                queryEmbedding.Vector,
+                topCandidates,
+                k,
+                lambda);
+
+        return Ok(new
+        {
+            query,
+            candidates,
+            k,
+            lambda,
+            mmrResults
+        });
+    }
+
+    [HttpPost("retrieval/rerank")]
+    public async Task<IActionResult> RerankAsync(
+    [FromBody] string query,
+    [FromQuery] int candidates = 5,
+    [FromQuery] int k = 3,
+    CancellationToken cancellationToken = default)
+    {
+        var queryEmbedding =
+            await embeddingGenerator.GenerateAsync(
+                query,
+                cancellationToken: cancellationToken);
+
+        var retrievalResults =
+            await vectorStore.SearchAsync(
+                queryEmbedding.Vector,
+                candidates,
+                cancellationToken: cancellationToken);
+
+        var rerankedResults =
+            await rerankingService.RerankAsync(
+                query,
+                retrievalResults,
+                k,
+                cancellationToken);
+
+        return Ok(new
+        {
+            query,
+            candidates,
+            k,
+            retrievalResults,
+            rerankedResults
+        });
+    }
+
+    [HttpPost("retrieval/query-rewrite/compare")]
+    public async Task<IActionResult> CompareQueryRewriteAsync(
+    [FromBody] string query,
+    [FromQuery] int k = 3,
+    CancellationToken cancellationToken = default)
+    {
+        var rewrite =
+            await queryRewriteService.RewriteAsync(
+                query,
+                cancellationToken);
+
+        var originalEmbedding =
+            await embeddingGenerator.GenerateAsync(
+                query,
+                cancellationToken: cancellationToken);
+
+        var rewrittenEmbedding =
+            await embeddingGenerator.GenerateAsync(
+                rewrite.RewrittenQuery,
+                cancellationToken: cancellationToken);
+
+        var originalResults =
+            await vectorStore.SearchAsync(
+                originalEmbedding.Vector,
+                k,
+                cancellationToken: cancellationToken);
+
+        var rewrittenResults =
+            await vectorStore.SearchAsync(
+                rewrittenEmbedding.Vector,
+                k,
+                cancellationToken: cancellationToken);
+
+        return Ok(new
+        {
+            originalQuery = query,
+            rewrittenQuery = rewrite.RewrittenQuery,
+            originalResults,
+            rewrittenResults
+        });
+    }
+
+    [HttpPost("retrieval/query-rewrite")]
+    public async Task<IActionResult> RewriteQueryAsync(
+    [FromBody] string query,
+    CancellationToken cancellationToken = default)
+    {
+        var result =
+            await queryRewriteService.RewriteAsync(
+                query,
+                cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpPost("retrieval/query-expansion/compare")]
+    public async Task<IActionResult> CompareQueryExpansionAsync(
+    [FromBody] string query,
+    [FromQuery] int k = 3,
+    CancellationToken cancellationToken = default)
+    {
+        var expansion =
+            await queryExpansionService.ExpandAsync(
+                query,
+                cancellationToken);
+
+        var originalEmbedding =
+            await embeddingGenerator.GenerateAsync(
+                query,
+                cancellationToken: cancellationToken);
+
+        var expandedEmbedding =
+            await embeddingGenerator.GenerateAsync(
+                expansion.ExpandedQuery,
+                cancellationToken: cancellationToken);
+
+        var originalResults =
+            await vectorStore.SearchAsync(
+                originalEmbedding.Vector,
+                k,
+                cancellationToken: cancellationToken);
+
+        var expandedResults =
+            await vectorStore.SearchAsync(
+                expandedEmbedding.Vector,
+                k,
+                cancellationToken: cancellationToken);
+
+        return Ok(new
+        {
+            originalQuery = query,
+            expandedQuery = expansion.ExpandedQuery,
+            expansion.ExpandedTerms,
+            originalResults,
+            expandedResults
+        });
+    }
+
+    [HttpPost("retrieval/query-expansion")]
+    public async Task<IActionResult> ExpandQueryAsync(
+    [FromBody] string query,
+    CancellationToken cancellationToken = default)
+    {
+        var result =
+            await queryExpansionService.ExpandAsync(
+                query,
+                cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpPost("retrieval/bm25")]
+    public async Task<IActionResult> Bm25SearchAsync(
+    [FromBody] string query,
+    [FromQuery] int k = 3,
+    CancellationToken cancellationToken = default)
+    {
+        var chunks =
+            await vectorStore.GetAllAsync(
+                cancellationToken);
+
+        var results =
+            Bm25Retriever.Search(
+                query,
+                chunks,
+                k);
+
+        return Ok(new
+        {
+            query,
+            k,
+            results
+        });
+    }
+
+    [HttpPost("retrieval/hybrid")]
+    public async Task<IActionResult> HybridSearchAsync(
+    [FromBody] string query,
+    [FromQuery] int k = 3,
+    CancellationToken cancellationToken = default)
+    {
+        var queryEmbedding =
+            await embeddingGenerator.GenerateAsync(
+                query,
+                cancellationToken: cancellationToken);
+
+        var vectorResults =
+            await vectorStore.SearchAsync(
+                queryEmbedding.Vector,
+                k * 2,
+                cancellationToken: cancellationToken);
+
+        var lexicalResults =
+            await vectorStore.LexicalSearchAsync(
+                query,
+                k * 2,
+                cancellationToken);
+
+        var maxVectorScore =
+            vectorResults.Count > 0
+                ? vectorResults.Max(x => x.Score)
+                : 0;
+
+        var maxLexicalScore =
+            lexicalResults.Count > 0
+                ? lexicalResults.Max(x => x.Score)
+                : 0;
+
+        var ids = vectorResults
+            .Select(x => x.Id)
+            .Union(lexicalResults.Select(x => x.Id))
+            .Distinct();
+
+        var results = new List<HybridSearchResult>();
+
+        foreach (var id in ids)
+        {
+            var vectorResult =
+                vectorResults.FirstOrDefault(x => x.Id == id);
+
+            var lexicalResult =
+                lexicalResults.FirstOrDefault(x => x.Id == id);
+
+            var normalizedVectorScore =
+                maxVectorScore > 0 && vectorResult is not null
+                    ? vectorResult.Score / maxVectorScore
+                    : 0;
+
+            var normalizedLexicalScore =
+                maxLexicalScore > 0 && lexicalResult is not null
+                    ? lexicalResult.Score / maxLexicalScore
+                    : 0;
+
+            var hybridScore =
+                (normalizedVectorScore * 0.7)
+                + (normalizedLexicalScore * 0.3);
+
+            results.Add(new HybridSearchResult
+            {
+                Id = id,
+
+                Text =
+                    vectorResult?.Text
+                    ?? lexicalResult!.Text,
+
+                VectorScore = normalizedVectorScore,
+                LexicalScore = normalizedLexicalScore,
+                HybridScore = hybridScore
+            });
+        }
+
+        var topResults = results
+            .OrderByDescending(x => x.HybridScore)
+            .Take(k)
+            .ToList();
+
+        return Ok(new
+        {
+            query,
+            k,
+            vectorWeight = 0.7,
+            lexicalWeight = 0.3,
+            results = topResults
+        });
+    }
+
+    [HttpPost("retrieval/search")]
+    public async Task<IActionResult> SearchAsync(
+    [FromBody] string query,
+    [FromQuery] int k = 3,
+    [FromQuery] string? documentId = null,
+    [FromQuery] string? source = null,
+    [FromQuery] string? version = null,
+    CancellationToken cancellationToken = default)
+    {
+
+        var filter = new VectorSearchFilter
+        {
+            DocumentId = documentId,
+            Source = source,
+            Version = version
+        };
+
+        var queryEmbedding =
+            await embeddingGenerator.GenerateAsync(
+                query,
+                cancellationToken: cancellationToken);
+
         var results =
             await vectorStore.SearchAsync(
                 queryEmbedding.Vector,
                 k,
+                filter,
                 cancellationToken);
 
         return Ok(new

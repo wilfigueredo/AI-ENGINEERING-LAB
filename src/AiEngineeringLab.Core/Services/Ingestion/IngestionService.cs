@@ -1,5 +1,5 @@
 using AiEngineeringLab.Core.AI.Chunking;
-using AiEngineeringLab.Core.AI.VectorStore;
+using AiEngineeringLab.Core.AI.Interface;
 using AiEngineeringLab.Core.Models.Chunking;
 using AiEngineeringLab.Core.Models.Ingestion;
 using Microsoft.Extensions.AI;
