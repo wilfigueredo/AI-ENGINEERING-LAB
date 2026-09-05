@@ -1,6 +1,8 @@
 using AiEngineeringLab.Core.AI;
 using AiEngineeringLab.Core.AI.Embeddings;
 using AiEngineeringLab.Core.Models.Retrieval;
+using AiEngineeringLab.Core.AI.Evaluation.Metrics;
+using RetrievalMetrics = AiEngineeringLab.Core.AI.RetrievalMetrics;
 
 namespace AiEngineeringLab.UnitTests.AI;
 
@@ -107,5 +109,88 @@ public class RetrievalMetricsTests
             Console.WriteLine(
                 $"K={k} | Precision={precision:P2} | Recall={recall:P2}");
         }
+    }
+
+    [Fact]
+    public void Calculate_ShouldCalculatePrecisionAndRecall()
+    {
+        var expected = new[]
+        {
+            "doc-a",
+            "doc-b",
+            "doc-c"
+        };
+
+        var retrieved = new[]
+        {
+            "doc-a",
+            "doc-b",
+            "doc-x",
+            "doc-y"
+        };
+
+        var result =
+            Core.AI.Evaluation.Metrics.RetrievalMetrics.Calculate(
+                expected,
+                retrieved);
+
+        Assert.Equal(0.50, result.Precision, 2);
+        Assert.Equal(0.67, result.Recall, 2);
+        Assert.Equal(1.00, result.HitRate, 2);
+        Assert.Equal(1.00, result.ReciprocalRank, 2);
+    }
+
+    [Fact]
+    public void Calculate_ShouldCalculateReciprocalRank()
+    {
+        var expected = new[]
+        {
+        "doc-a",
+        "doc-b"
+    };
+
+        var retrieved = new[]
+        {
+        "doc-x",
+        "doc-y",
+        "doc-b",
+        "doc-a"
+    };
+
+        var result =
+            Core.AI.Evaluation.Metrics.RetrievalMetrics.Calculate(
+                expected,
+                retrieved);
+
+        Assert.Equal(0.50, result.Precision, 2);
+        Assert.Equal(1.00, result.Recall, 2);
+        Assert.Equal(1.00, result.HitRate, 2);
+        Assert.Equal(0.33, result.ReciprocalRank, 2);
+    }
+
+    [Fact]
+    public void Calculate_ShouldReturnZero_WhenNoRelevantDocumentIsRetrieved()
+    {
+        var expected = new[]
+        {
+        "doc-a",
+        "doc-b"
+    };
+
+        var retrieved = new[]
+        {
+        "doc-x",
+        "doc-y"
+    };
+
+        var result =
+            Core.AI.Evaluation.Metrics.RetrievalMetrics.Calculate(
+                expected,
+                retrieved);
+
+        Assert.Equal(0, result.Precision);
+        Assert.Equal(0, result.Recall);
+        Assert.Equal(0, result.HitRate);
+        Assert.Equal(0, result.ReciprocalRank);
     }
 }
