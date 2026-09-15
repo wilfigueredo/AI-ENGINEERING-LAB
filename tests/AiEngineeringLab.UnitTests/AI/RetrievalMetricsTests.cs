@@ -34,7 +34,7 @@ public class RetrievalMetricsTests
         Assert.Equal(0.5, recall);
     }
 
-    [Fact]
+    [Fact(Skip = "Requires live OpenAI API access.")]
     public async Task TopK_ShouldDemonstratePrecisionRecallTradeoff()
     {
         var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");

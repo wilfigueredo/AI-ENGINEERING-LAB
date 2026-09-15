@@ -6,7 +6,7 @@ namespace AiEngineeringLab.UnitTests.AI;
 
 public class VectorRetrieverSemanticTests
 {
-    [Fact]
+    [Fact(Skip = "Requires live OpenAI API access.")]
     public async Task TopK_ShouldRankSemanticallyRelatedTextFirst()
     {
         var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");

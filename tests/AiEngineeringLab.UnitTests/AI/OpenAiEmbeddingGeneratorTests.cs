@@ -4,7 +4,7 @@ namespace AiEngineeringLab.UnitTests.AI;
 
 public class OpenAiEmbeddingGeneratorTests
 {
-    [Fact]
+    [Fact(Skip = "Requires live OpenAI API access.")]
     public async Task GenerateAsync_ShouldReturnEmbedding()
     {
         var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
