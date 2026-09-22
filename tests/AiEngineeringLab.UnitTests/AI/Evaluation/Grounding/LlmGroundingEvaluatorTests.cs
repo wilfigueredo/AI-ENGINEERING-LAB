@@ -1,62 +1,72 @@
-using AiEngineeringLab.Core.AI.Evaluation.Generation;
+using AiEngineeringLab.Core.AI.Evaluation.Grounding;
 using Microsoft.Extensions.AI;
 
-namespace AiEngineeringLab.UnitTests.AI.Evaluation.Generation;
+namespace AiEngineeringLab.UnitTests.AI.Evaluation.Grounding;
 
-public sealed class LlmGenerationEvaluatorTests
+public sealed class LlmGroundingEvaluatorTests
 {
     [Fact]
-    public async Task EvaluateAsync_ShouldReturnScoresFromJudge()
+    public async Task EvaluateAsync_ShouldReturnGroundingEvaluation()
     {
         var chatClient = new FakeChatClient(
             """
             {
-              "correctness": 0.90,
-              "relevance": 0.95,
-              "completeness": 0.80,
-              "overallScore": 0.88
+              "faithfulnessScore": 0.75,
+              "supportedClaims": [
+                "Semantic Kernel is an SDK.",
+                "It integrates AI capabilities into applications."
+              ],
+              "unsupportedClaims": [
+                "It was created in 2023."
+              ]
             }
             """);
 
         var evaluator =
-            new LlmGenerationEvaluator(chatClient);
+            new LlmGroundingEvaluator(chatClient);
 
         var result =
             await evaluator.EvaluateAsync(
                 question:
                     "What is Semantic Kernel?",
-                expectedAnswer:
-                    "Semantic Kernel is an AI orchestration framework.",
+                context:
+                [
+                    "Semantic Kernel is an SDK for integrating AI capabilities into applications."
+                ],
                 generatedAnswer:
-                    "Semantic Kernel helps orchestrate AI capabilities in applications.");
+                    "Semantic Kernel is an SDK created in 2023 for integrating AI capabilities into applications.");
 
-        Assert.Equal(0.90, result.Correctness);
-        Assert.Equal(0.95, result.Relevance);
-        Assert.Equal(0.80, result.Completeness);
-        Assert.Equal(0.88, result.OverallScore);
+        Assert.Equal(0.75, result.FaithfulnessScore);
+
+        Assert.Contains(
+            "Semantic Kernel is an SDK.",
+            result.SupportedClaims);
+
+        Assert.Contains(
+            "It was created in 2023.",
+            result.UnsupportedClaims);
     }
 
     [Fact]
-    public async Task EvaluateAsync_ShouldRejectScoreOutsideValidRange()
+    public async Task EvaluateAsync_ShouldRejectInvalidFaithfulnessScore()
     {
         var chatClient = new FakeChatClient(
             """
             {
-              "correctness": 1.20,
-              "relevance": 0.90,
-              "completeness": 0.80,
-              "overallScore": 0.90
+              "faithfulnessScore": 1.20,
+              "supportedClaims": [],
+              "unsupportedClaims": []
             }
             """);
 
         var evaluator =
-            new LlmGenerationEvaluator(chatClient);
+            new LlmGroundingEvaluator(chatClient);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => evaluator.EvaluateAsync(
-                "What is Semantic Kernel?",
-                "An AI orchestration framework.",
-                "Semantic Kernel orchestrates AI."));
+                "Question",
+                ["Context"],
+                "Generated answer"));
     }
 
     private sealed class FakeChatClient : IChatClient
