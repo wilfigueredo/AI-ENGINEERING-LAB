@@ -286,141 +286,168 @@ O objetivo não é acumular frameworks, bancos ou SDKs, mas demonstrar entendime
 
 ## 2.2 Chunking e Indexação
 
-⬜ **Próximo passo**
+✅ Concluído
 
-- Fixed Chunking;
-- Recursive Chunking;
-- Semantic Chunking;
-- Sliding Window;
-- overlap;
-- chunk size;
-- metadata;
-- pipeline de ingestão;
-- reindexação;
-- versionamento de conteúdo;
-- comparação prática entre estratégias de chunking.
+### Estratégias implementadas
 
-**Projeto:** comparar diferentes estratégias de chunking sobre o mesmo conjunto de documentos.
+- Fixed Chunking em `FixedTextChunker`;
+- Recursive Chunking em `RecursiveTextChunker`;
+- Semantic Chunking em `SemanticTextChunker`;
+- Sliding Window em `SlidingWindowChunker`;
+- Token-based Chunking em `TokenTextChunker`;
+- `chunkSize`, overlap e step;
+- experimentos comparativos por endpoints da API.
+
+### Metadata, ingestão e reindexação
+
+- `ChunkingContext` com `DocumentId`, `Title`, `Source` e `Version`;
+- `TextChunk` com posição, tamanho e índice do chunk;
+- `DocumentInput` e `IndexedChunk`;
+- `IngestionService` para chunking → embeddings → persistência;
+- remoção dos chunks anteriores por `DocumentId` antes da nova gravação;
+- versionamento de conteúdo preservado como metadata.
+
+**Projeto:** pipeline de chunking e ingestão funcional, com múltiplas estratégias observáveis no laboratório.
 
 ---
 
 ## 2.3 Vector Databases
 
-⬜ Pendente
+✅ Implementação prática principal concluída
 
-**Estratégia:** implementar um banco em profundidade e estudar os demais conceitualmente.
+### PostgreSQL + pgvector
 
-### Implementação prática principal
+- `IVectorStore` como contrato de armazenamento e busca;
+- `InMemoryVectorStore` para experimentos determinísticos;
+- `PgVectorStore` para persistência real;
+- PostgreSQL + extensão pgvector via Docker Compose;
+- persistência de embeddings e metadata;
+- Top-K por similaridade vetorial;
+- busca por distância cosseno usando o operador `<=>`;
+- filtros por `DocumentId`, `Source` e `Version`;
+- remoção/reindexação por documento;
+- busca lexical com PostgreSQL Full Text Search.
 
-- PostgreSQL + `pgvector`;
-- schema para documentos/chunks;
-- persistência de embeddings;
-- indexação;
-- consulta vetorial;
-- Top-K;
-- metadata filters;
-- integração .NET.
+### Limite atual versionado
 
-### Estudo conceitual/comparativo
+O repositório contém a implementação de acesso ao pgvector, mas não contém migration/script versionado responsável por criar a tabela `chunks`, a extensão `vector` ou um índice ANN/HNSW. Esses itens devem ser tratados explicitamente na evolução production-ready.
 
-- ChromaDB;
-- Pinecone;
-- Weaviate;
-- serviço gerenciado x infraestrutura própria;
-- custo e escalabilidade;
-- experiência de desenvolvimento;
-- filtros e metadata.
+### Alternativas e indexação
 
-### Indexação vetorial
-
+- ChromaDB, Pinecone e Weaviate permanecem como referências comparativas;
 - Exact Search x Approximate Nearest Neighbor (ANN);
 - HNSW;
-- recall de busca aproximada;
-- velocidade x qualidade;
-- parâmetros de índice.
+- velocidade x recall;
+- parâmetros de índice e custo operacional.
 
-**Projeto:** indexação e busca vetorial real com PostgreSQL + `pgvector`.
+**Projeto:** indexação e busca vetorial real com PostgreSQL + pgvector.
 
 ---
 
 ## 2.4 Retrieval Avançado
 
-⬜ Pendente
+✅ Concluído no laboratório
 
-- Hybrid Search;
-- BM25;
-- Query Expansion;
-- Query Rewriting;
-- Re-ranking;
-- MMR — Maximal Marginal Relevance;
-- Context Compression;
-- metadata filters avançados;
-- busca lexical + semântica;
-- impacto das técnicas em Precision e Recall.
+### Capacidades implementadas
 
-**Projeto:** evoluir o pipeline de busca e medir a melhoria de qualidade.
+- BM25 em `Bm25Retriever`;
+- Hybrid Search combinando busca vetorial e lexical;
+- Query Expansion em `QueryExpansionService`;
+- Query Rewriting em `QueryRewriteService`;
+- Re-ranking em `RerankingService`;
+- MMR — Maximal Marginal Relevance em `MmrRetriever`;
+- Context Compression em `ContextCompressionService`;
+- metadata filters;
+- experimentos comparativos expostos pela API.
+
+As técnicas continuam separadas em componentes observáveis. A composição delas em um pipeline RAG end-to-end pertence à Fase 2.6.
+
+**Projeto:** pipeline de retrieval avançado implementado como capacidades reutilizáveis e experimentáveis.
 
 ---
 
 ## 2.5 AI Harness / Avaliação
 
-⬜ Pendente
+✅ Concluído
 
-### Datasets de avaliação
+### Dataset de avaliação
 
-- perguntas e respostas esperadas;
-- casos positivos, negativos e ambíguos;
-- dataset de regressão;
-- versionamento.
+- `RagEvaluationCase`;
+- `RagEvaluationDataset`;
+- `RagEvaluationDatasetLoader`;
+- dataset JSON com casos positivos e caso sem resposta esperada.
 
 ### Retrieval Evaluation
 
-- Precision@K;
-- Recall@K;
-- MRR — Mean Reciprocal Rank;
-- relevance;
-- ranking quality;
-- cobertura.
+- Precision;
+- Recall;
+- Hit Rate;
+- Reciprocal Rank / MRR;
+- agregação de métricas com `RetrievalMetricsAggregator`.
 
 ### Answer Evaluation
 
-- groundedness;
-- faithfulness;
-- answer relevance;
-- precisão factual quando mensurável;
-- detecção de informação não suportada;
-- LLM-as-a-Judge.
+- `IGenerationEvaluator`;
+- avaliação determinística básica com `RuleBasedGenerationEvaluator`;
+- LLM-as-a-Judge com `LlmGenerationEvaluator`;
+- correctness;
+- relevance;
+- completeness;
+- overall score.
 
-### Harness de testes
+### Grounding / Faithfulness
 
-- avaliação automática;
-- regressão para RAG;
-- comparação de prompts;
-- comparação de chunking;
-- comparação de pipelines;
-- comparação antes/depois de re-ranking e query rewriting;
-- métricas reproduzíveis.
+- `IGroundingEvaluator`;
+- `LlmGroundingEvaluator`;
+- supported claims;
+- unsupported claims;
+- faithfulness score;
+- agregação de grounding.
 
-**Projeto:** suíte de avaliação do assistente RAG com métricas antes/depois das melhorias.
+### Harness e regressão
+
+- `IRagEvaluationPipeline`;
+- `RagEvaluationHarness`;
+- `RagEvaluationRunner`;
+- `RagEvaluationBaseline`;
+- `RagRegressionDetector`;
+- agregação de retrieval, generation e grounding em uma execução;
+- testes unitários com doubles/fakes para manter o Harness independente de um pipeline RAG concreto.
+
+O contrato `IRagEvaluationPipeline` é a ponte planejada entre a suíte de avaliação e o pipeline production-ready da Fase 2.6.
+
+**Projeto:** suíte de avaliação automatizada para retrieval, resposta, grounding e regressão de RAG.
 
 ---
 
 ## 2.6 RAG Production-Ready
 
-⬜ Pendente
+🟡 Próximo passo / em início
 
-- pipeline end-to-end: ingestão → indexação → retrieval → contexto → geração;
+### 2.6.1 Pipeline RAG end-to-end
+
+- consolidar query → embedding → retrieval → contexto → geração;
+- preservar proveniência do conteúdo recuperado, incluindo `DocumentId` e metadata necessária;
+- construir uma implementação concreta consumível pelo `IRagEvaluationPipeline`;
+- mover a orquestração reutilizável para fora do `ChatController`;
+- conectar o pipeline real ao Harness criado na Fase 2.5.
+
+### Evolução production-ready
+
 - avaliação contínua;
-- observabilidade;
-- otimização;
-- custos;
+- observabilidade e tracing;
+- tokens, latência e custos;
 - tratamento de falhas;
-- configuração e segurança;
-- testes de qualidade e regressão.
+- cancellation, timeout e resiliência;
+- configuração;
+- segurança;
+- otimização de qualidade x latência x custo;
+- testes de qualidade e regressão;
+- infraestrutura/versionamento do schema e índices necessários ao pgvector.
 
 ### Entrega da Fase 2
 
-**Assistente Corporativo RAG em .NET** com testes de qualidade e pipeline production-ready.
+**Assistente Corporativo RAG em .NET** com pipeline end-to-end, testes de qualidade, Harness de avaliação e características production-ready.
 
 ---
 
@@ -819,25 +846,16 @@ Especialização escolhida conforme demanda de mercado, projetos e objetivos pro
 
 Neste momento:
 
-- ✅ **Fase 1 concluída e auditada contra o plano de estudos**;
-- ✅ LLMs, tokens, context window e custos estudados e experimentados;
-- ✅ Temperature e Top-p testados na prática;
-- ✅ papéis System/User/Assistant validados;
-- ✅ Prompt Engineering comparado em experimento controlado;
-- ✅ JSON Mode / Structured Outputs implementados com schema e tipos fortes;
-- ✅ streaming e histórico implementados;
-- ✅ Function Calling e Semantic Kernel implementados;
-- ✅ MCP Client/Server implementado;
-- ✅ fundamentos de Transformers concluídos com laboratório BERT + ONNX;
+- ✅ **Fase 1 concluída e auditada**;
 - 🟡 **Fase 2 em andamento**;
-- ✅ arquitetura RAG estudada;
-- ✅ embeddings gerados e inspecionados;
-- ✅ Cosine Similarity, Dot Product e Euclidean Distance implementados;
-- ✅ Top-K Retrieval implementado;
-- ✅ Precision e Recall implementados;
-- ✅ pipeline básico de retrieval semântico implementado em memória;
-- ⬜ próximo passo: **Chunking e Indexação — começando por Fixed Chunking**.
+- ✅ 2.1 Retrieval Fundamentals;
+- ✅ 2.2 Chunking e Indexação;
+- ✅ 2.3 implementação prática de Vector Database com PostgreSQL + pgvector;
+- ✅ 2.4 Retrieval Avançado;
+- ✅ 2.5 AI Harness / Avaliação;
+- 🟡 próximo passo: **2.6 RAG Production-Ready**, começando pelo pipeline end-to-end;
+- ⬜ Fase 3 Agentic AI após o fechamento da Fase 2.
 
 A sequência imediata será:
 
-**Fixed Chunking → Recursive Chunking → Semantic Chunking → Sliding Window/Overlap → Metadata/Ingestão/Reindexação → Vector Database → Retrieval Avançado → AI Harness → RAG Production-Ready → Agentic AI → Arquitetura de IA em Produção → Python/Multimodal → Especializações → Capstone.**
+**Pipeline RAG end-to-end → integração com o Harness → observabilidade → resiliência → custos/otimização → fechamento production-ready da Fase 2 → Agentic AI.**

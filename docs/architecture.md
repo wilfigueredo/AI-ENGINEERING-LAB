@@ -2,29 +2,27 @@
 
 ## 1. Overview
 
-The AI Engineering Lab is structured as a modular .NET solution used to
-implement and observe AI Engineering concepts through isolated experiments.
+The AI Engineering Lab is a modular .NET solution used to implement, compare,
+test and observe AI Engineering concepts through working experiments.
 
-The current architecture separates:
+The repository currently contains practical implementations for:
 
-- HTTP/API concerns;
-- reusable application models and services;
-- AI tools and plugins;
-- automated tests.
-
-The laboratory currently integrates:
-
-- Microsoft.Extensions.AI;
-- OpenAI;
+- LLM integration;
+- conversation history and streaming;
+- tools and function calling;
 - Semantic Kernel;
-- conversational history;
-- streaming;
-- function calling;
-- embeddings;
-- vector similarity.
+- Structured Outputs;
+- embeddings and vector similarity;
+- chunking and ingestion;
+- PostgreSQL + pgvector;
+- advanced retrieval;
+- RAG evaluation and regression detection;
+- MCP client/server communication;
+- a local Transformer/BERT experiment with ONNX.
 
-The architecture is intentionally modular so new AI experiments can be added
-without coupling all concepts directly to the API layer.
+The laboratory is intentionally incremental. Individual capabilities are first
+implemented and made observable in isolation, then composed into larger
+pipelines when the roadmap reaches the appropriate phase.
 
 ---
 
@@ -36,173 +34,183 @@ AI-ENGINEERING-LAB
 ├── src/
 │   ├── AiEngineeringLab.Api
 │   ├── AiEngineeringLab.Core
-│   └── AiEngineeringLab.Plugins
+│   ├── AiEngineeringLab.Plugins
+│   ├── AiEngineeringLab.McpServer
+│   ├── AiEngineeringLab.McpClient
+│   └── AiEngineeringLab.Transformers
 │
 ├── tests/
 │   └── AiEngineeringLab.UnitTests
 │
 ├── docs/
 ├── prompts/
+├── docker-compose.yml
 └── AiEngineeringLab.sln
 ```
+
+---
 
 ## 3. Project Responsibilities
 
 ### AiEngineeringLab.Api
 
-The API project is the executable entry point of the laboratory.
+Executable ASP.NET Core entry point.
 
 Current responsibilities include:
 
-- ASP.NET Core application startup;
-- dependency injection;
-- external configuration;
-- OpenAI client configuration;
-- Microsoft.Extensions.AI registration;
-- Semantic Kernel registration;
+- application startup and dependency injection;
+- configuration and secrets binding;
+- OpenAI chat client registration;
 - embedding generator registration;
-- HTTP endpoints;
-- chat requests;
-- streamed responses through Server-Sent Events;
-- cancellation handling;
-- experiment endpoints.
+- PostgreSQL/Npgsql configuration;
+- pgvector type registration;
+- HTTP experiment endpoints;
+- conversation and streaming endpoints;
+- endpoints for chunking, ingestion and retrieval experiments;
+- Semantic Kernel integration.
 
-The API layer coordinates the components but should avoid containing reusable
-domain or mathematical logic.
+The API layer is currently also the place where several advanced retrieval
+experiments are composed. Reusable RAG orchestration should move out of the
+controller during the production-ready phase.
 
 ### AiEngineeringLab.Core
 
-The Core project contains reusable application concepts that do not depend on
-HTTP concerns.
+Contains reusable AI/application behavior that is independent from HTTP.
 
-Current responsibilities include:
-
-- chat request and response models;
-- conversation state;
-- conversation history management;
-- AI configuration models;
-- embedding comparison models;
-- vector similarity algorithms.
-
-Examples of components currently located in Core include:
+Current areas include:
 
 ```text
-ConversationHistoryService
-ConversationState
-ChatRequest
-ChatResult
-AiOptions
-EmbeddingComparisonRequest
-VectorSimilarity
+AI/
+├── Chunking/
+├── Embeddings/
+├── Evaluation/
+│   ├── Generation/
+│   ├── Grounding/
+│   ├── Harness/
+│   ├── Metrics/
+│   └── Models/
+├── Interface/
+├── Retrieval/
+└── VectorStore/
+
+Models/
+├── Chat/
+├── Chunking/
+├── Embedding/
+├── Ingestion/
+└── Retrieval/
+
+Services/
+├── Conversations/
+└── Ingestion/
 ```
 
-The Core project is intended to contain logic that can be tested independently
-from ASP.NET Core and external AI providers whenever possible.
+Core contains the main RAG building blocks, evaluation contracts and
+deterministic algorithms used by the laboratory.
 
 ### AiEngineeringLab.Plugins
 
-The Plugins project contains deterministic capabilities exposed to AI systems.
+Contains deterministic capabilities exposed to AI systems.
 
-The laboratory currently demonstrates two approaches.
+Current approaches:
 
-#### Microsoft.Extensions.AI Tools
+- Microsoft.Extensions.AI tools through `AIFunctionFactory`;
+- Semantic Kernel native functions through `KernelFunction`.
 
-```text
-DateTimePlugin
-    ↓
-AiTools
-    ↓
-AIFunctionFactory
-    ↓
-AITool
-```
+Examples include date operations and deterministic text operations.
 
-This approach demonstrates tool creation through
-Microsoft.Extensions.AI.
+### AiEngineeringLab.McpServer
 
-Current deterministic capabilities include operations such as:
+Standalone MCP server using stdio transport.
 
-- obtaining the current date;
-- calculating the number of days between dates.
+It currently exposes:
 
-#### Semantic Kernel Native Plugins
+- a framework version tool;
+- a framework information resource.
 
-```text
-TextPlugin
-    ↓
-[KernelFunction]
-    ↓
-KernelPlugin
-    ↓
-Semantic Kernel
-```
+### AiEngineeringLab.McpClient
 
-This approach demonstrates native Semantic Kernel functions.
+Standalone MCP client used to demonstrate:
 
-Current functions include:
+- connection to the MCP server;
+- tool discovery;
+- resource discovery;
+- tool invocation;
+- resource reading.
 
-```text
-count_words
-to_upper_case
-```
+### AiEngineeringLab.Transformers
 
-Keeping both implementations in the laboratory is intentional.
+Standalone local Transformer laboratory.
 
-The goal is to demonstrate and compare different AI integration approaches
-rather than force every experiment through a single framework.
+It uses:
+
+- BERT tokenizer;
+- ONNX Runtime;
+- a BERT Tiny classification model;
+- `input_ids`;
+- `attention_mask`;
+- logits and Softmax;
+- toxicity classification.
+
+This project exists to make Transformer fundamentals observable without
+turning the main application into a machine-learning training project.
 
 ### AiEngineeringLab.UnitTests
 
-The test project validates deterministic components independently from the LLM
-whenever possible.
+Validates deterministic behavior and AI integration boundaries.
 
-Current tests include:
+The suite currently covers, among other areas:
 
-- DateTime plugin behavior;
-- vector similarity calculations.
+- vector similarity;
+- retrieval metrics;
+- evaluation metrics;
+- generation evaluators;
+- grounding evaluation;
+- RAG Harness orchestration;
+- RAG regression detection;
+- dataset loading;
+- plugin behavior.
 
-Vector similarity tests currently cover scenarios such as:
+Live-provider tests are isolated/skipped when external OpenAI access is
+required.
 
-- identical vectors;
-- orthogonal vectors;
-- opposite vectors;
-- incompatible dimensions.
-
-External LLM behavior is not treated as deterministic unit-test logic.
+---
 
 ## 4. Dependency Direction
 
-The current dependency direction is conceptually:
-```text
-                 AiEngineeringLab.Api
-                      │       │
-                      │       │
-                      ▼       ▼
-      AiEngineeringLab.Core   AiEngineeringLab.Plugins
-                                      │
-                                      │
-                                      ▼
-                             AI framework abstractions
-
-```
-
-Tests consume the projects containing the behavior being validated:
+The project-reference direction is:
 
 ```text
+AiEngineeringLab.Api
+       │
+       ├────────► AiEngineeringLab.Core
+       │
+       └────────► AiEngineeringLab.Plugins
+                         │
+                         └────────► AiEngineeringLab.Core
+
+
 AiEngineeringLab.UnitTests
-        │
-        ├──► AiEngineeringLab.Core
-        │
-        └──► AiEngineeringLab.Plugins
+       │
+       ├────────► AiEngineeringLab.Core
+       └────────► AiEngineeringLab.Plugins
+
+
+AiEngineeringLab.McpClient     runtime MCP     AiEngineeringLab.McpServer
+          │                  communication                │
+          └───────────────────────►◄─────────────────────┘
+
+AiEngineeringLab.Transformers
+        standalone laboratory
 ```
 
-The Core project should remain independent from the API project.
+The Core project must not depend on the API project.
+
+---
 
 ## 5. LLM Integration
 
-Chat communication is abstracted through `IChatClient` from `Microsoft.Extensions.AI`.
-
-Conceptually:
+Chat communication uses `IChatClient` from Microsoft.Extensions.AI.
 
 ```text
 HTTP Request
@@ -211,21 +219,25 @@ ChatController
      ↓
 IChatClient
      ↓
-AI Provider
+OpenAI
      ↓
-LLM
-     ↓
-Response
+ChatResponse
 ```
 
-The application therefore interacts with an abstraction rather than coupling
-the controller directly to provider-specific chat APIs.
+The API also demonstrates:
 
-## 6. Conversation History
+- System/User/Assistant roles;
+- Structured Outputs;
+- tools;
+- streaming;
+- usage/token inspection;
+- cancellation.
 
-Conversation state is maintained independently for each conversation.
+---
 
-Conceptually:
+## 6. Conversation State and Streaming
+
+Conversation history is maintained per `conversationId`.
 
 ```text
 conversationId
@@ -239,332 +251,331 @@ ConversationState
       └── SemaphoreSlim
 ```
 
-Each conversation contains:
+The per-conversation gate prevents concurrent writes to the same history while
+allowing independent conversations to execute concurrently.
 
-- its own message history;
-- its own synchronization gate.
+Streaming uses Server-Sent Events and propagates cancellation. Interrupted
+streaming operations can restore the previous conversation state instead of
+persisting an incomplete assistant turn.
 
-The per-conversation `SemaphoreSlim` prevents concurrent operations from
-modifying the same conversation state simultaneously while still allowing
-different conversations to execute independently.
+---
 
-## 7. Streaming Architecture
+## 7. Embeddings
 
-The laboratory exposes streamed responses using Server-Sent Events.
-
-Conceptually:
+The primary application pipeline uses:
 
 ```text
-Client
-  │
-  │ POST /stream
-  ▼
-ChatController
-  │
-  ▼
-IChatClient.GetStreamingResponseAsync
-  │
-  ├── chunk
-  ├── chunk
-  ├── chunk
-  │
-  └── completed
-  ▼
-Client
+IEmbeddingGenerator<string, Embedding<float>>
+                 ↓
+            OpenAI client
+                 ↓
+         Embedding<float>
 ```
 
-The streaming implementation currently includes:
+registered through Microsoft.Extensions.AI.
 
-- `text/event-stream`;
-- chunk events;
-- completion events;
-- error events;
-- response flushing;
-- cancellation support;
-- conversation rollback when generation is interrupted.
+There is also an older laboratory-specific `IEmbeddingGenerator` abstraction
+used by `OpenAiEmbeddingGenerator` in isolated experiments. This is a
+transitional duplication and should not be expanded in new production-ready
+RAG code without an explicit reason.
 
-## 8. Cancellation
+---
 
-ASP.NET Core provides a `CancellationToken` for request operations.
+## 8. Chunking and Ingestion
 
-The token is propagated through asynchronous AI calls.
+The repository contains multiple chunking strategies:
 
-Conceptually:
+- `FixedTextChunker`;
+- `RecursiveTextChunker`;
+- `SemanticTextChunker`;
+- `SlidingWindowChunker`;
+- `TokenTextChunker`.
 
-```text
-Client disconnects or cancels
-           ↓
-ASP.NET Core
-           ↓
-CancellationToken
-           ↓
-AI operation
-           ↓
-operation interruption
-```
-
-Streaming also restores the conversation to its previous state when an
-incomplete interaction must not become part of the history.
-
-## 9. Tool Calling with Microsoft.Extensions.AI
-
-Tools are exposed to the chat model through `ChatOptions`.
-
-Conceptually:
+The current ingestion service uses fixed chunking and preserves metadata.
 
 ```text
-Application
+DocumentInput
      ↓
-ChatOptions.Tools
+IngestionService
      ↓
-LLM
+ChunkingContext
      ↓
-Function selection
+FixedTextChunker
      ↓
-C# Tool
-     ↓
-Tool result
-     ↓
-LLM response
-```
-
-The LLM decides when an available tool is useful, while deterministic business
-logic remains implemented in C#.
-
-## 10. Semantic Kernel
-
-Semantic Kernel is included as a second orchestration approach.
-
-The current Kernel contains registered native plugins.
-
-Conceptually:
-
-```text
-Kernel
-  │
-  └── Plugin: Text
-          │
-          ├── count_words
-          └── to_upper_case
-```
-
-The laboratory currently demonstrates two invocation modes.
-
-### Direct Invocation
-
-```text
-Application
-    ↓
-Kernel.InvokeAsync
-    ↓
-Explicit plugin/function
-    ↓
-KernelFunction
-```
-
-The application selects the function.
-
-### Automatic Function Calling
-
-```text
-Prompt
-   ↓
-Kernel.InvokePromptAsync
-   ↓
-LLM
-   ↓
-FunctionChoiceBehavior.Auto
-   ↓
-KernelFunction
-   ↓
-Function result
-   ↓
-LLM
-   ↓
-Final response
-```
-
-In this mode, the LLM decides whether a registered function should be invoked.
-
-## 11. Embeddings
-
-Embeddings are abstracted through `IEmbeddingGenerator<string, Embedding<float>>`.
-
-Conceptually:
-
-```text
-Text
-  ↓
 IEmbeddingGenerator
-  ↓
-Embedding Model
-  ↓
-Embedding<float>
-  ↓
-Vector<float>
+     ↓
+IndexedChunk
+     ↓
+DeleteByDocumentIdAsync
+     ↓
+IVectorStore.SaveAsync
 ```
 
-The current embedding experiment exposes:
+Metadata currently includes:
 
-- the original text;
-- vector dimensionality;
-- a preview of vector values.
+- document ID;
+- title;
+- source;
+- version;
+- chunk index.
 
-The embedding model and chat model are treated as separate AI capabilities.
+Deleting the previous chunks before saving the new set provides the current
+reindexing behavior for a document.
 
-## 12. Vector Similarity
+---
 
-Vector comparison logic is located in Core rather than the controller.
+## 9. Vector Storage and Search
 
-Current flow:
+`IVectorStore` is the main storage/search contract.
+
+Implementations:
+
+### InMemoryVectorStore
+
+Used for local deterministic experiments and unit-test-friendly scenarios.
+
+It supports:
+
+- save;
+- list;
+- vector search;
+- metadata filtering;
+- deletion by document ID.
+
+Lexical search is intentionally not supported by this implementation.
+
+### PgVectorStore
+
+Uses PostgreSQL, Npgsql and pgvector.
+
+It supports:
+
+- embedding persistence;
+- vector retrieval;
+- cosine-distance ordering with `<=>`;
+- metadata filters;
+- deletion by document ID;
+- PostgreSQL Full Text Search for lexical retrieval.
+
+Docker Compose provides a pgvector-enabled PostgreSQL container.
+
+### Current infrastructure boundary
+
+The repository currently assumes the `chunks` table exists. It does not yet
+version the database schema, `CREATE EXTENSION vector`, or an ANN/HNSW index
+definition. Production-ready database initialization/migrations therefore
+remain an explicit evolution point.
+
+---
+
+## 10. Advanced Retrieval
+
+Advanced retrieval capabilities live primarily under
+`AiEngineeringLab.Core.AI.Retrieval`.
+
+Current components include:
+
+- `Bm25Retriever`;
+- `QueryExpansionService`;
+- `QueryRewriteService`;
+- `RerankingService`;
+- `MmrRetriever`;
+- `ContextCompressionService`.
+
+The API currently exposes separate experiment endpoints for:
+
+- vector search;
+- BM25;
+- hybrid search;
+- query expansion;
+- query rewriting;
+- re-ranking;
+- MMR;
+- context compression.
+
+This separation is intentional for learning and comparison.
+
+The production-ready phase will compose selected capabilities behind a reusable
+RAG query pipeline instead of leaving orchestration in `ChatController`.
+
+---
+
+## 11. RAG Evaluation Architecture
+
+The evaluation subsystem is separated from the concrete RAG implementation.
 
 ```text
-Text A                  Text B
-  ↓                       ↓
-Embedding A            Embedding B
-       \                 /
-        \               /
-         ▼             ▼
-          VectorSimilarity
-                ↓
-        Cosine Similarity
+RagEvaluationDataset
+        ↓
+RagEvaluationRunner
+        ↓
+RagEvaluationHarness
+        │
+        ├── IRagEvaluationPipeline
+        ├── IGenerationEvaluator
+        └── IGroundingEvaluator
+        ↓
+RagEvaluationExecutionResult
+        ↓
+RagEvaluationSummary
+        ↓
+RagRegressionDetector
 ```
 
-This separation allows the mathematical behavior to be unit tested without
-making calls to an external AI provider.
+### Retrieval evaluation
 
-Euclidean distance will be added as another vector metric during the remaining
-embedding experiments.
+Current metrics include:
 
-## 13. Dependency Injection
+- Precision;
+- Recall;
+- Hit Rate;
+- Reciprocal Rank / MRR.
 
-AI services and application components are registered through the standard
-ASP.NET Core dependency injection container.
+### Generation evaluation
 
-Current registrations conceptually include:
+`IGenerationEvaluator` has:
 
-IChatClient
-IEmbeddingGenerator
-ConversationHistoryService
-DateTimePlugin
-AiTools
-TextPlugin
-Kernel
+- a rule-based implementation for deterministic experiments;
+- an LLM-as-a-Judge implementation.
 
-Dependency injection is used to:
+Generation criteria include:
 
-- avoid manual dependency creation in controllers;
-- isolate implementations;
-- support testability;
-- centralize configuration.
+- correctness;
+- relevance;
+- completeness;
+- overall score.
+
+### Grounding evaluation
+
+`IGroundingEvaluator` evaluates:
+
+- faithfulness;
+- supported claims;
+- unsupported claims.
+
+### Harness boundary
+
+`IRagEvaluationPipeline` deliberately isolates the Harness from a concrete RAG
+pipeline.
+
+Current Harness tests use fake pipeline implementations. A concrete end-to-end
+RAG implementation is the bridge to be built in Phase 2.6.
+
+---
+
+## 12. Current RAG Architecture
+
+The implemented pieces currently form two different maturity levels.
+
+### Ingestion side — composed
+
+```text
+Document
+   ↓
+Chunking
+   ↓
+Embeddings
+   ↓
+IndexedChunk
+   ↓
+PgVectorStore
+```
+
+### Query side — capabilities exist, composition is pending
+
+```text
+Question
+   │
+   ├── Query Rewrite / Expansion
+   ├── Embedding
+   ├── Vector Search
+   ├── Lexical Search / BM25
+   ├── Hybrid Search
+   ├── Re-ranking
+   ├── MMR
+   └── Context Compression
+           ↓
+     [end-to-end orchestration pending]
+           ↓
+        Generation
+```
+
+The query-side production pipeline is the main architectural target of
+Phase 2.6.
+
+---
+
+## 13. MCP Architecture
+
+MCP is isolated in dedicated console projects.
+
+```text
+AiEngineeringLab.McpClient
+          ↓ stdio
+AiEngineeringLab.McpServer
+      ├── Tools
+      └── Resources
+```
+
+This keeps protocol experimentation independent from the ASP.NET Core API.
+
+---
 
 ## 14. Configuration and Secrets
 
-Application configuration is externalized through configuration files and
-options.
+Configuration uses standard .NET configuration/options.
 
-Examples include:
+Current configuration includes:
 
-```text
-AI Provider
-Chat Model ID
-Embedding Model ID
-Logging configuration
-```
+- AI provider;
+- chat model ID;
+- embedding model ID;
+- OpenAI API key;
+- PostgreSQL connection string.
 
-Sensitive credentials such as API keys must not be committed to the
-repository.
+Sensitive credentials must remain outside version control through environment
+variables, user secrets or another secret-management mechanism.
 
-Development secrets are expected to be stored outside version-controlled
-configuration.
+---
 
 ## 15. Current Architectural Boundary
 
-The laboratory is an experimental environment.
+The repository is a learning laboratory, not a single production product.
 
-Some HTTP endpoints exist specifically to make concepts observable, for
-example:
+Experiment endpoints are valid when they make a concept observable, even when
+the same endpoint would not belong in a production public API.
 
-- Kernel inspection;
-- direct Kernel Function invocation;
-- embedding inspection;
-- embedding similarity comparison.
+The current production-readiness boundary is clear:
 
-These endpoints are valid in the laboratory even when they would not belong
-in the public API of a production application.
+### Already implemented
 
-This distinction is intentional:
+- ingestion;
+- chunking;
+- embeddings;
+- pgvector persistence/search;
+- advanced retrieval capabilities;
+- generation primitives;
+- evaluation Harness;
+- regression detection.
 
-```text
-AI Engineering Lab
-        ↓
-experimentation
-comparison
-learning
-technical validation
+### Still to be consolidated in Phase 2.6
 
-Production Application
-        ↓
-only capabilities justified
-by product requirements
-```
+- a concrete end-to-end RAG query pipeline;
+- retrieval provenance suitable for evaluation and source attribution;
+- context construction as an explicit pipeline responsibility;
+- integration of the real pipeline with `IRagEvaluationPipeline`;
+- observability/tracing;
+- latency/token/cost measurements across the RAG pipeline;
+- timeout/retry/failure handling;
+- production-ready database schema/index management;
+- configuration and security hardening.
 
-## 16. Current Architecture
+---
 
-At the current stage, the main component relationship can be summarized as:
+## 16. Evolution Rule
 
-```text
-                         Client
-                           │
-                           ▼
-                 AiEngineeringLab.Api
-                           │
-                     ChatController
-                           │
-          ┌────────────────┼────────────────┐
-          │                │                │
-          ▼                ▼                ▼
- ConversationHistory   IChatClient         Kernel
-          │                │                │
-          │                ▼                ▼
-          │             OpenAI      Semantic Kernel Plugins
-          │                                 │
-          │                                 ▼
-          │                              TextPlugin
-          │
-          ├───────────────────────────────────────┐
-          │                                       │
-          ▼                                       ▼
-      Chat History                          AI Tools
-                                              │
-                                              ▼
-                                         DateTimePlugin
-
-
-                      Embedding Flow
-
-                         Client
-                           │
-                           ▼
-                    ChatController
-                           │
-                           ▼
-               IEmbeddingGenerator
-                           │
-                           ▼
-                    OpenAI Embeddings
-                           │
-                           ▼
-                    Embedding<float>
-                           │
-                           ▼
-                    VectorSimilarity
-```
-
-## 17. Evolution Rule
-
-New technologies should not be added merely to increase the number of
-frameworks used by the repository.
+New frameworks, providers or infrastructure should not be added only to
+increase technology count.
 
 A capability should be introduced when it provides at least one of:
 
@@ -574,5 +585,5 @@ A capability should be introduced when it provides at least one of:
 - a reusable implementation pattern;
 - a measurable engineering trade-off.
 
-Future capabilities are documented in `roadmap.md` and should only be added to
-this architecture document after they are actually implemented.
+Future architecture documentation should describe capabilities only after they
+exist in the repository or explicitly identify them as planned.

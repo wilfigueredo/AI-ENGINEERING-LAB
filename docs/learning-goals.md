@@ -17,6 +17,8 @@ Each topic should combine:
 4. automated tests when applicable;
 5. analysis of trade-offs and production use cases.
 
+---
+
 ## Core Learning Areas
 
 ### LLM Integration
@@ -30,7 +32,8 @@ Topics include:
 - prompts;
 - conversation context;
 - asynchronous execution;
-- provider abstractions.
+- provider abstractions;
+- token usage and cost awareness.
 
 ### LLM Generation Parameters
 
@@ -44,6 +47,19 @@ Topics include:
 - creativity;
 - interaction between sampling parameters;
 - provider-specific capabilities.
+
+### Structured Outputs
+
+Understand how to obtain predictable machine-readable responses from LLMs.
+
+Topics include:
+
+- JSON outputs;
+- schemas;
+- typed responses;
+- validation;
+- deserialization;
+- invalid-output handling.
 
 ### Tools and Function Calling
 
@@ -75,6 +91,36 @@ Topics include:
 - prompt invocation;
 - integration with existing application pipelines.
 
+### MCP
+
+Understand how AI applications expose and consume interoperable tools and
+resources.
+
+Topics include:
+
+- MCP client/server roles;
+- stdio transport;
+- tools;
+- resources;
+- capability discovery;
+- invocation and resource reading.
+
+### Transformer Fundamentals
+
+Understand enough Transformer architecture to make better AI Engineering
+decisions without turning the roadmap into a deep-learning research track.
+
+Topics include:
+
+- tokenization;
+- attention and self-attention;
+- Query, Key and Value;
+- encoder x decoder;
+- BERT x GPT;
+- local ONNX inference;
+- logits and Softmax;
+- distinction between a base Transformer and a task-specific head.
+
 ### Embeddings
 
 Understand how semantic information can be represented numerically.
@@ -85,23 +131,42 @@ Topics include:
 - vector dimensionality;
 - semantic representation;
 - cosine similarity;
-- Euclidean distance;
+- Dot Product;
+- Euclidean Distance;
 - comparison between similarity metrics.
 
-### Vector Search
+### Chunking and Ingestion
 
-Understand how embeddings can be indexed and retrieved efficiently.
+Understand how source content becomes searchable RAG data.
+
+Topics include:
+
+- fixed chunking;
+- recursive chunking;
+- semantic chunking;
+- token-based chunking;
+- sliding windows;
+- overlap;
+- metadata;
+- ingestion;
+- reindexing;
+- content versioning.
+
+### Vector Search and Vector Databases
+
+Understand how embeddings can be stored and retrieved efficiently.
 
 Topics include:
 
 - vector storage;
-- indexing;
-- similarity search;
-- Top K retrieval;
-- similarity thresholds;
-- metadata;
-- filtering;
-- ranking.
+- PostgreSQL + pgvector;
+- exact similarity search;
+- Top-K retrieval;
+- metadata filtering;
+- lexical search;
+- ANN concepts;
+- HNSW concepts;
+- operational trade-offs between local and managed vector databases.
 
 ### Retrieval-Augmented Generation
 
@@ -116,7 +181,24 @@ Topics include:
 - retrieval;
 - context construction;
 - grounded generation;
-- source attribution.
+- source attribution;
+- separation of ingestion and query pipelines.
+
+### Advanced Retrieval
+
+Understand how retrieval quality can be improved beyond plain vector Top-K.
+
+Topics include:
+
+- BM25;
+- Hybrid Search;
+- Query Expansion;
+- Query Rewriting;
+- re-ranking;
+- MMR;
+- Context Compression;
+- metadata filtering;
+- quality/latency/cost trade-offs.
 
 ### Retrieval Evaluation
 
@@ -126,28 +208,47 @@ Topics include:
 
 - Precision;
 - Recall;
-- Precision@K;
-- Recall@K;
+- Hit Rate;
+- Reciprocal Rank / MRR;
 - relevance;
 - ranking quality;
-- retrieval trade-offs.
+- retrieval trade-offs;
+- aggregation across evaluation datasets.
 
-### Structured Outputs
+### Generation and Grounding Evaluation
 
-Understand how to obtain predictable machine-readable responses from LLMs.
+Understand how non-deterministic RAG answers can be evaluated systematically.
 
 Topics include:
 
-- JSON outputs;
-- schemas;
-- typed responses;
-- validation;
-- deserialization;
-- invalid-output handling.
+- correctness;
+- answer relevance;
+- completeness;
+- overall generation score;
+- groundedness / faithfulness;
+- supported and unsupported claims;
+- deterministic evaluators;
+- LLM-as-a-Judge.
+
+### AI Harness and Regression Testing
+
+Understand how RAG quality can be evaluated repeatedly instead of by visual
+inspection alone.
+
+Topics include:
+
+- evaluation datasets;
+- pipeline contracts;
+- automated execution;
+- metric aggregation;
+- baselines;
+- tolerance;
+- regression detection;
+- comparison of pipeline changes.
 
 ### AI Orchestration
 
-Understand how multiple AI capabilities can cooperate in an application.
+Understand how multiple AI capabilities cooperate in an application.
 
 Topics include:
 
@@ -158,23 +259,45 @@ Topics include:
 - multi-step execution;
 - deterministic and probabilistic components.
 
-### Observability
+### Observability and Production Readiness
 
-Understand how AI systems can be monitored and evaluated in production.
+Understand how AI systems can be operated and improved in production.
 
 Topics include:
 
 - structured logging;
+- tracing;
 - token usage;
 - latency;
-- tool execution duration;
+- cost;
 - retrieval metrics;
 - similarity scores;
-- estimated request cost;
-- failure tracking.
+- failure tracking;
+- retries and timeouts;
+- configuration;
+- security;
+- continuous evaluation.
+
+---
+
+## Current Progress
+
+- ✅ Phase 1 — fundamentals, LLM integration, tools, Semantic Kernel, MCP and Transformers;
+- ✅ Phase 2.1 — retrieval fundamentals;
+- ✅ Phase 2.2 — chunking and ingestion;
+- ✅ Phase 2.3 — practical PostgreSQL + pgvector vector-store implementation;
+- ✅ Phase 2.4 — advanced retrieval capabilities;
+- ✅ Phase 2.5 — evaluation Harness, generation evaluation, grounding and regression detection;
+- 🟡 Phase 2.6 — next step: compose the existing capabilities into a production-ready end-to-end RAG pipeline.
+
+---
 
 ## Expected Outcome
 
 At the end of the roadmap, the developer should be capable of designing,
-implementing, testing and evaluating AI-enabled applications in .NET while
-understanding the engineering trade-offs behind the chosen architecture.
+implementing, testing, evaluating, protecting and operating AI-enabled
+applications while understanding the engineering trade-offs behind the chosen
+architecture.
+
+.NET remains the primary application stack, with other technologies introduced
+only when they add a justified capability or meaningful comparison.
